@@ -1,0 +1,6 @@
+@(queryForm: Form[QueryData], result: String)
+
+@helper.form(action = routes.Application.search()) {
+    @helper.inputText(queryForm("query"))
+}
+Result: @result
