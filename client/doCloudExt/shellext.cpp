@@ -34,8 +34,8 @@ ShellExt::ShellExt(void) : m_cRef(1),
 	 */
 	if (ret > 0 && ret < MAX_PATH)
 	{
-		moduleFilename = new wchar_t[ret];
-		wcscpy(moduleFilename, filename);
+		moduleFilename = new wchar_t[ret+1];
+		StringCbCopy(moduleFilename, ret, filename);
 	}
 }
 
