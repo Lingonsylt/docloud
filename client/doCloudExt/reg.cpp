@@ -73,6 +73,32 @@ HRESULT SetHKCRRegistryKeyAndValue(PCWSTR pszSubKey, PCWSTR pszValueName,
     return hr;
 }
 
+HRESULT
+RegSetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PCWSTR data)
+{
+	HRESULT hr;
+	HKEY subhkey = NULL;
+
+	// Creates the specified registry key. If the key already exists, the 
+	// function opens it. 
+	hr = HRESULT_FROM_WIN32(
+	    RegCreateKeyEx(hkey, subkey_name, 0, 
+		NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &subhkey, NULL));
+
+	if (!SUCCEEDED(hr)) return hr;
+
+	if (data != NULL)
+	{
+		// Set the specified value of the key.
+		DWORD cbData = lstrlen(data) * sizeof(*data);
+		hr = HRESULT_FROM_WIN32(RegSetValueEx(subhkey, value_name, 0, 
+			REG_SZ, reinterpret_cast<const BYTE *>(data), cbData));
+	}
+
+	RegCloseKey(subhkey);
+	return hr;
+}
+
 
 //
 //   FUNCTION: GetHKCRRegistryKeyAndValue
@@ -349,4 +375,34 @@ HRESULT UnregisterShellExtContextMenuHandler(
     }
 
     return hr;
+}
+
+
+HRESULT
+RegisterShellOverlayIconIdentifier(const CLSID& clsid, PCWSTR name)
+{
+	HRESULT hr;
+	wchar_t szCLSID[MAX_PATH];
+	wchar_t subkey[MAX_PATH];
+
+	StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
+
+	hr = StringCchPrintf(subkey, ARRAYSIZE(subkey),
+	    L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ShellIconOverlayIdentifiers\\%s",
+	    name);
+	if (!SUCCEEDED(hr)) return hr;
+	/* Set default value for subkey */
+	return RegSetKeyString(HKEY_LOCAL_MACHINE, subkey, NULL, szCLSID);
+}
+
+HRESULT
+UnregisterShellOverlayIconIdentifier(PCWSTR name)
+{
+	HRESULT hr;
+	wchar_t subkey[MAX_PATH];
+	hr = StringCchPrintf(subkey, ARRAYSIZE(subkey),
+	    L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ShellIconOverlayIdentifiers\\%s",
+	    name);
+	if (!SUCCEEDED(hr)) return hr;
+	return HRESULT_FROM_WIN32(SHDeleteKey(HKEY_LOCAL_MACHINE, subkey));
 }

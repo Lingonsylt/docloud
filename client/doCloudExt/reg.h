@@ -117,3 +117,8 @@ HRESULT RegisterShellExtContextMenuHandler(
 //
 HRESULT UnregisterShellExtContextMenuHandler(
     PCWSTR pszFileType, const CLSID& clsid);
+
+
+HRESULT RegisterShellOverlayIconIdentifier(const CLSID& clsid, PCWSTR name);
+HRESULT UnregisterShellOverlayIconIdentifier(PCWSTR name);
+
