@@ -1,4 +1,6 @@
+#include <windows.h>
 #include <strsafe.h>
+#define NO_SHLWAPI_STRFCNS
 #include <shlwapi.h>
 #pragma comment(lib, "shlwapi.lib")
 #include "shellext.h"
