@@ -3,9 +3,13 @@ import java.security.MessageDigest
 import java.util.Formatter
 import org.apache.commons.io.FileUtils
 import java.io._
-import org.apache.poi.openxml4j.opc.OPCPackage
-import org.apache.poi.xwpf.extractor.XWPFWordExtractor
-import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.apache.http.client.HttpClient
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.entity.mime.content.ByteArrayBody
+import org.apache.http.HttpResponse
+import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.entity.mime.MultipartEntity
+import org.apache.http.util.EntityUtils
 import scala.collection.JavaConverters._
 import spray.json._
 import DefaultJsonProtocol._
@@ -34,12 +38,29 @@ object Client {
 
     val queryResult = queryFiles(result)
     println("queryResult: " + queryResult.prettyPrint)
+
+    val qr : Seq[JsValue] = queryResult.convertTo[Seq[JsValue]]
+    qr.map(
+      (element: JsValue) => {
+        val index : Boolean = element.asJsObject.fields("index").convertTo[Boolean]
+        if (index) {
+          val str = element.asJsObject.fields("hash").convertTo[String]
+          result.map(
+            (file : Map[String, Any]) => {
+              val hash : String = file("hash").asInstanceOf[String]
+              if(str == hash) {
+                indexFile(file)
+              }
+            }
+          )
+        }
+      }
+    )
   }
 
   def jsonRequest(path : String, data : JsValue) : JsValue = {
     println("dataJsValue: " + data.prettyPrint)
-    //Request.Post(API_URL + path)
-    Request.Post("http://localhost:8983/solr/update/json?commit=true")
+    Request.Post(API_URL + path)
       .bodyString(data + "", ContentType.APPLICATION_JSON)
       .execute().returnContent().asString.asJson
   }
@@ -53,39 +74,32 @@ object Client {
   }
 
   def queryFiles(files : List[Map[String, Any]]) : JsValue = {
-    jsonRequest("check", files.map(
+    jsonRequest("index/query", files.map(
       (file : Map[String, Any]) => {
         (file("hash"), file("path")) match {
           case (hash: String, path: String) => {
-            Map("id" -> hash,
-                "path_s" -> path)
+            Map("hash" -> hash,
+                "path" -> path)
           }
         }
       }
     ).toJson)
   }
 
-  def indexFile(file: File) {
-    //println(file.getAbsolutePath)
-    try {
-      val hdoc = new XWPFDocument(OPCPackage.open(new FileInputStream(file.getAbsolutePath)))
-      val extractor = new XWPFWordExtractor(hdoc)
+  def indexFile(file: Map[String, Any]) {
+    val bytes : Array[Byte] = file("bytes").asInstanceOf[Array[Byte]]
+    val hash : String = file("hash").asInstanceOf[String]
+    val client : HttpClient = new DefaultHttpClient()
+    val post : HttpPost = new HttpPost(API_URL + "index/update")
 
-      val text = extractor getText()
-      val json = List(Map("id" -> file.getName,
-                          "content_txt" -> text))
+    val entity : MultipartEntity = new MultipartEntity()
+    entity.addPart("file", new ByteArrayBody(bytes, ContentType.APPLICATION_OCTET_STREAM, hash))
+    post.setEntity(entity)
 
-      //println(json.toJson)
+    val response : HttpResponse = client.execute(post)
 
-      //println(
-      Request.Post("http://localhost:8983/solr/update/json?commit=true")
-        .bodyString(json.toJson + "", ContentType.APPLICATION_JSON)
-        .execute().returnContent()
-    } catch {
-      case ex: java.lang.IllegalArgumentException => {
-        println(ex + ", " + file.getName)
-      }
-    }
+    val responseJson = EntityUtils.toString(response.getEntity).asJson
+    println(responseJson.prettyPrint)
   }
 
   def getMAC : String = {

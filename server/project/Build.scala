@@ -11,7 +11,8 @@ object ApplicationBuild extends Build {
     // Add your project dependencies here,
     jdbc,
     anorm,
-    "org.apache.httpcomponents" % "fluent-hc" % "4.3.1"
+    "org.apache.httpcomponents" % "fluent-hc" % "4.3.1",
+    "org.apache.poi" % "poi-ooxml" % "3.9"
   )
 
 

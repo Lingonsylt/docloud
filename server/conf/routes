@@ -5,6 +5,8 @@
 # Home page
 GET     /                           controllers.Application.index
 GET     /search                     controllers.Application.search_view
+POST    /index/query                controllers.Application.index_query
+POST    /index/update               controllers.Application.index_update
 POST    /search                     controllers.Application.search
 
 # Map static resources from the /public folder to the /assets URL path
