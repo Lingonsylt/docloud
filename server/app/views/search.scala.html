@@ -1,6 +1,34 @@
-@(queryForm: Form[QueryData], result: String)
+@(queryForm: Form[QueryData], result: List[play.api.libs.json.JsValue] = List())
 
-@helper.form(action = routes.Application.search()) {
-    @helper.inputText(queryForm("query"))
+@import java.io.File
+@import helper.twitterBootstrap._
+
+@main("Sök") {
+    @helper.form(action = routes.Application.search(), 'class -> "label-inline") {
+        @helper.inputText(queryForm("query"), '_label  -> "Sök:")
+    }
+    <ul class="list-group">
+        @result.map { item =>
+            <li class="list-group-item query-result-item">
+                @defining((item \ "id").as[String]) { hash =>
+                    @defining((item \ "links_ss").as[List[String]]) { links =>
+                        <div class="well">
+                            @Html((item \ "highlight").as[String])
+                        </div>
+                        @links.map { link =>
+                            @defining(new File(link)) { file =>
+                                <div>
+                                    <ul class="list-unstyled">
+                                        <li>
+                                            <span class="path">@file.getParent@File.separator</span><a href="@routes.Application.download(hash, file.getName)" class="filename">@file.getName</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            }
+                        }
+                    }
+                }
+            </li>
+        }
+    </ul>
 }
-Result: @result

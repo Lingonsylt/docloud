@@ -12,7 +12,10 @@ object ApplicationBuild extends Build {
     jdbc,
     anorm,
     "org.apache.httpcomponents" % "fluent-hc" % "4.3.1",
-    "org.apache.poi" % "poi-ooxml" % "3.9"
+    "org.apache.poi" % "poi-ooxml" % "3.9",
+    "org.apache.httpcomponents" % "fluent-hc" % "4.3.1",
+    "org.apache.httpcomponents" % "httpmime" % "4.3.1",
+    "org.apache.commons" % "commons-io" % "1.3.2"
   )
 
 
