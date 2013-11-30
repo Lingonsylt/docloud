@@ -5,11 +5,12 @@ import org.apache.commons.io.FileUtils
 import java.io._
 import org.apache.http.client.HttpClient
 import org.apache.http.client.methods.HttpPost
-import org.apache.http.entity.mime.content.ByteArrayBody
+import org.apache.http.entity.mime.content.{StringBody, ByteArrayBody}
 import org.apache.http.HttpResponse
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.entity.mime.MultipartEntity
 import org.apache.http.util.EntityUtils
+import org.parboiled.errors.ParsingException
 import scala.collection.JavaConverters._
 import spray.json._
 import DefaultJsonProtocol._
@@ -18,7 +19,7 @@ import org.apache.http.entity.ContentType
 
 object Client {
   val searchPaths = List("C:\\Users\\lingon\\Desktop")
-  val fileExtentions = List("docx")
+  val fileExtentions = List("docx", "odt", "pdf", "doc")
   val mac = getMAC
   val API_URL = "http://localhost:9000/"
 
@@ -66,8 +67,7 @@ object Client {
   }
 
   def getFileInfo(file: File) : Map[String, Any] = {
-    val bis = new BufferedInputStream(new FileInputStream(file))
-    val fileBytes = Stream.continually(bis.read).takeWhile(-1 !=).map(_.toByte).toArray
+    val fileBytes = org.apache.commons.io.FileUtils.readFileToByteArray(file)
     Map("hash" -> getHash(fileBytes),
         "path" -> file.getAbsolutePath,
         "bytes" -> fileBytes)
@@ -89,17 +89,31 @@ object Client {
   def indexFile(file: Map[String, Any]) {
     val bytes : Array[Byte] = file("bytes").asInstanceOf[Array[Byte]]
     val hash : String = file("hash").asInstanceOf[String]
+    val path : String = file("path").asInstanceOf[String]
     val client : HttpClient = new DefaultHttpClient()
     val post : HttpPost = new HttpPost(API_URL + "index/update")
 
     val entity : MultipartEntity = new MultipartEntity()
+    entity.addPart("metadata", new StringBody(Map(
+      "path" -> path,
+      "hash" -> hash
+    ).toJson.toString(), ContentType.APPLICATION_JSON))
     entity.addPart("file", new ByteArrayBody(bytes, ContentType.APPLICATION_OCTET_STREAM, hash))
     post.setEntity(entity)
 
     val response : HttpResponse = client.execute(post)
-
-    val responseJson = EntityUtils.toString(response.getEntity).asJson
-    println(responseJson.prettyPrint)
+    val responseBody = EntityUtils.toString(response.getEntity)
+    println(path)
+    try {
+      val responseJson = responseBody.asJson
+      println(responseJson.prettyPrint)
+    } catch {
+      case ex: ParsingException => {
+        val dbg_file = File.createTempFile("debug_html_", ".html")
+        FileUtils.writeStringToFile(dbg_file, responseBody)
+        Runtime.getRuntime.exec("start C:\\Users\\lingon\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe file:///" + dbg_file.getAbsolutePath)
+      }
+    }
   }
 
   def getMAC : String = {
