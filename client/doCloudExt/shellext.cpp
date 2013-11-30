@@ -5,6 +5,7 @@
 #pragma comment(lib, "shlwapi.lib")
 #include "shellext.h"
 #include "resource.h"
+#include <stdio.h>
 
 extern HINSTANCE g_hInst;
 extern long g_cDllRef;
@@ -13,15 +14,29 @@ FORMATETC fmte = {CF_HDROP, (DVTARGETDEVICE FAR *)NULL, DVASPECT_CONTENT, -1, TY
 #define IDM_DISPLAY             0  // The command's identifier offset
 
 ShellExt::ShellExt(void) : m_cRef(1), 
-	dataObj(NULL)
+	dataObj(NULL),
+	moduleFilename(NULL)
 {
+	wchar_t filename[MAX_PATH];
 	InterlockedIncrement(&g_cDllRef);
+	HRESULT ret;
 
 	// Load the bitmap for the menu item. 
 	// If you want the menu item bitmap to be transparent, the color depth of 
 	// the bitmap must not be greater than 8bpp.
-	m_hMenuBmp = LoadImage(g_hInst, MAKEINTRESOURCE(IDB_OK), 
-	    IMAGE_BITMAP, 0, 0, LR_DEFAULTSIZE | LR_LOADTRANSPARENT);
+	//m_hMenuBmp = LoadImage(g_hInst, MAKEINTRESOURCE(IDB_OK), 
+	//   IMAGE_BITMAP, 0, 0, LR_DEFAULTSIZE | LR_LOADTRANSPARENT);
+
+	ret = GetModuleFileName(g_hInst, filename, ARRAYSIZE(filename));
+
+	/* Ignore errors and keep moduleFilename as NULL -
+	 * we'll lose our overlayicons, but everything else works
+	 */
+	if (ret > 0 && ret < MAX_PATH)
+	{
+		moduleFilename = new wchar_t[ret+1];
+		StringCchCopy(moduleFilename, ret+1, filename);
+	}
 }
 
 ShellExt::~ShellExt(void)
@@ -31,6 +46,9 @@ ShellExt::~ShellExt(void)
 		DeleteObject(m_hMenuBmp);
 		m_hMenuBmp = NULL;
 	}
+
+	if (moduleFilename)
+		delete moduleFilename;
 
 	InterlockedDecrement(&g_cDllRef);
 }
@@ -188,9 +206,12 @@ STDMETHODIMP ShellExt::GetCommandString(UINT_PTR idCommand,
 STDMETHODIMP
 ShellExt::GetOverlayInfo(PWSTR pwszIconFile, int cchMax,int *pIndex,DWORD *pdwFlags)
 {
-	StringCchCopy(reinterpret_cast<PWSTR>(pwszIconFile), cchMax, L"c:\\devel\\out.ico");
-	*pIndex = 0;
-	*pdwFlags = ISIOI_ICONFILE;
+	*pdwFlags = 0;
+	if (moduleFilename) {
+		StringCchCopy(reinterpret_cast<PWSTR>(pwszIconFile), cchMax, moduleFilename);
+		*pIndex = 0;
+		*pdwFlags = ISIOI_ICONFILE;
+	}
 	return S_OK;
 }
 

@@ -63,6 +63,7 @@ class ShellExt : public IShellExtInit, public IContextMenu, public IShellIconOve
 	private:
 		// Reference count of component.
 		long m_cRef;
+		wchar_t *moduleFilename;
 
 		// reference to dataobject
 		LPDATAOBJECT dataObj;

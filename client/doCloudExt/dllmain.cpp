@@ -106,6 +106,7 @@ DllRegisterServer(void)
 		hr = RegisterShellExtContextMenuHandler(L".h", CLSID_doCloudExt, L"doCloud.Ext");
 	}
 
+	hr = RegisterShellOverlayIconIdentifier(CLSID_doCloudExt, L"doCloud");
 	return hr;
 }
 
@@ -133,6 +134,7 @@ DllUnregisterServer(void)
 		hr = UnregisterShellExtContextMenuHandler(L".h", CLSID_doCloudExt);
 	}
 
+	hr = UnregisterShellOverlayIconIdentifier(L"doCloud");
 	return hr;
 }
 
