@@ -17,7 +17,7 @@ import org.apache.http.client.HttpClient
 import org.apache.http.impl.client.DefaultHttpClient
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.MultipartEntity
-import org.apache.http.entity.mime.content.{ByteArrayBody}
+import org.apache.http.entity.mime.content.ByteArrayBody
 import org.apache.http.HttpResponse
 import org.apache.http.util.EntityUtils
 import org.codehaus.jackson.JsonParseException
@@ -56,10 +56,7 @@ object Application extends Controller {
           Request.Get("http://localhost:8983/solr/update?stream.body=%3Cdelete%3E%3Cquery%3E*:*%3C/query%3E%3C/delete%3E&commit=true")
             .execute()
         }
-        val response = Request.Get("http://localhost:8983/solr/collection1/select?wt=json&hl=true&hl.fl=content_txt&fl=id,links_ss&hl.fragsize=200&q=content_txt:" + query)
-          .execute().returnContent().asString
-
-        val jsonResponse = Json.parse(response)
+        val jsonResponse = jsonRequest("collection1/select?wt=json&hl=true&hl.fl=content_txt&fl=id,links_ss&hl.fragsize=200&q=content_txt:" + query)
         val items = (jsonResponse \ "response" \ "docs").as[List[JsValue]]
         val highlights = (jsonResponse \ "highlighting").as[Map[String,JsValue]]
         val hlItems = items.map { item =>
@@ -78,9 +75,27 @@ object Application extends Controller {
     val res : Seq[JsValue] = data.map(
       (element: JsValue) => {
         val hash = (element \ "hash").as[String]
-        val result = Json.parse(Request.Get(SOLR_API_URL + "collection1/select?wt=json&q=id:" + hash)
-          .execute().returnContent().asString)
-        Json.obj("hash" -> hash, "index" -> (if ((result \ "response" \ "numFound").as[Int] == 0) true else false))
+        val result = jsonRequest("collection1/get?wt=json&id=" + hash + "&fl=links_ss&fl=parsed_b")
+        val path = (element \ "path").as[String]
+        (result \ "doc").as[Option[JsObject]] match {
+          case None => {
+            val solrRequest = Json.toJson(List(Json.obj("id" -> hash, "links_ss" -> path)))
+            val updateRes = jsonRequest("collection1/update?wt=json&commit=true", solrRequest)
+            Json.obj("hash" -> hash, "index" -> true)
+          }
+          case Some(o) => {
+            if(!(o \ "links_ss").as[List[String]].exists((p) => p == path)) {
+              val solrRequest = Json.toJson(List(Json.obj("id" -> hash, "links_ss" -> Json.obj("add" -> path))))
+              val updateRes = jsonRequest("collection1/update?wt=json&commit=true", solrRequest)
+            }
+
+            val parsed_b = (result \ "doc" \ "parsed_b").as[Option[Boolean]]
+            parsed_b match {
+              case None => Json.obj("hash" -> hash, "index" -> true)
+              case Some(parsed_bb) => Json.obj("hash" -> hash, "index" -> !parsed_bb)
+            }
+          }
+        }
       }
     )
     Ok(Json.toJson(res))
@@ -94,7 +109,11 @@ object Application extends Controller {
     val fileBytes = org.apache.commons.io.FileUtils.readFileToByteArray(file.ref.file)
 
     val status = try {
-      val response = multipartRequest("update/extract?wt=json&literal.id=" + hash + "&uprefix=attr_&fmap.content=content_txt&literal.links_ss=" + java.net.URLEncoder.encode(path, "UTF-8") + "&commit=true", path, fileBytes)
+      val res = jsonRequest("collection1/get?wt=json&id=" + hash + "&fl=links_ss")
+      val links = (res \ "doc" \ "links_ss").as[Seq[String]].map { item =>
+        "&literal.links_ss=" + java.net.URLEncoder.encode(item, "UTF-8")
+      }.mkString("")
+      val response = multipartRequest("update/extract?wt=json&literal.parsed_b=true&literal.id=" + hash + links + "&uprefix=attr_&fmap.content=content_txt&commit=true", path, fileBytes)
       (response \ "responseHeader" \ "status").as[Int]
     } catch {
       case ex: JsonParseException => 1
@@ -116,6 +135,11 @@ object Application extends Controller {
         None
       }
     }
+  }
+
+  def jsonRequest(path: String) : JsValue =  {
+    Json.parse(Request.Get(SOLR_API_URL + path)
+      .execute().returnContent().asString)
   }
 
   def jsonRequest(path : String, data : JsValue) : JsValue = {
