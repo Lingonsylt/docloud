@@ -201,14 +201,22 @@ HRESULT RegisterShellExtContextMenuHandler(
 		if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0') {
 			pszFileType = szDefaultVal;
 		}
-	}
-
-	// Create the key HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>}
-	hr = StringCchPrintf(szSubkey, ARRAYSIZE(szSubkey), 
-	    L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
-	if (SUCCEEDED(hr)) {
-		// Set the default value of the key.
-		hr = RegSetKeyString(HKEY_CLASSES_ROOT, szSubkey, NULL, pszFriendlyName);
+		
+		// Create the key HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>}
+		hr = StringCchPrintf(szSubkey, ARRAYSIZE(szSubkey), 
+		    L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
+		if (SUCCEEDED(hr)) {
+			// Set the default value of the key.
+			hr = RegSetKeyString(HKEY_CLASSES_ROOT, szSubkey, NULL, pszFriendlyName);
+		}
+	} else {
+		// Create the key HKCR\<File Type>\shellex\ContextMenuHandlers\<Friendly name> = {<CLSID>}
+		hr = StringCchPrintf(szSubkey, ARRAYSIZE(szSubkey), 
+		    L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, pszFriendlyName);
+		if (SUCCEEDED(hr)) {
+			// Set the default value of the key.
+			hr = RegSetKeyString(HKEY_CLASSES_ROOT, szSubkey, NULL, szCLSID);
+		}
 	}
 
 	return hr;
