@@ -5,13 +5,23 @@
 #pragma comment(lib, "shlwapi.lib")
 #include "shellext.h"
 #include "resource.h"
+#include "fileinfo.h"
 #include <stdio.h>
 
 extern HINSTANCE g_hInst;
 extern long g_cDllRef;
 FORMATETC fmte = {CF_HDROP, (DVTARGETDEVICE FAR *)NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
 
-#define IDM_DISPLAY             0  // The command's identifier offset
+#define IDCMD_ADD		0
+#define IDCMD_REMOVE		1
+
+/* Used for debugging */
+#define log(str, ...)
+
+/* Do not check files that do not have a complete path,
+ * e.g. c:\a is ok, but not c:
+ */
+#define MIN_PATH_LEN		4
 
 ShellExt::ShellExt(void) : m_cRef(1), 
 	dataObj(NULL),
@@ -126,8 +136,8 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 {
 	HRESULT hres;
 	UINT idCmd;
-	int cbFiles;
 	wchar_t *text;
+	int ret;
 
 	// If uFlags include CMF_DEFAULTONLY then we should not do anything.
 	if (CMF_DEFAULTONLY & uFlags)
@@ -136,13 +146,58 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 	}
 
 	hres = dataObj->GetData(&fmte, &medium);
+
+	nFiles = 0;
 	if (medium.hGlobal)
-		cbFiles = DragQueryFile((HDROP)medium.hGlobal, (UINT)-1, 0, 0);
+		nFiles = DragQueryFile((HDROP)medium.hGlobal, (UINT)-1, 0, 0);
 
 	idCmd = idCmdFirst;
 
-	if (cbFiles > 1) text = L"Add files to doCloud";
-	else text = L"Add file to doCloud";
+	/* Build list of files, with info */
+	int found = 0;
+	int blacklisted = 0;
+
+	v_files.resize(nFiles);
+	for (int i = 0; i < nFiles; i++) {
+		wchar_t filename[300];
+		char filename_utf8[300];
+		struct file_info file;
+
+
+		DragQueryFile((HDROP)medium.hGlobal, i, filename, ARRAYSIZE(filename));
+
+		/* FIXME! - check return value? */
+		WideCharToMultiByte(CP_UTF8, 0, filename, -1,
+		    filename_utf8, sizeof(filename_utf8), NULL, NULL);
+
+		if (strlen(filename_utf8) < MIN_PATH_LEN) {
+			v_files[i].filename = NULL;
+			continue;
+		}
+
+		v_files[i].id = -1;
+		v_files[i].filename = strdup(filename_utf8);
+		v_files[i].parent_flags = 0;
+		v_files[i].blacklisted = 0;
+
+		ret = docloud_get_file_info(&(v_files[i]));
+		log("docloud_get_file_info(%d: %s): %d\n", v_files[i].id, v_files[i].filename, ret);
+		if (ret == DC_OK) {
+			found++;
+			if (v_files[i].blacklisted) blacklisted ++;
+			break;
+		}
+	}
+
+	if (found && !blacklisted) {
+		if (nFiles > 1) text = L"Remove files from doCloud";
+		else text = L"Remove file from doCloud";
+		idCmd += IDCMD_REMOVE;
+	} else {
+		if (nFiles > 1) text = L"Add files to doCloud";
+		else text = L"Add file to doCloud";
+		idCmd += IDCMD_ADD;
+	}
 
 	InsertMenu(hMenu, indexMenu++, MF_STRING|MF_BYPOSITION, idCmd++, text);
 	InsertMenu(hMenu, indexMenu++, MF_SEPARATOR|MF_BYPOSITION, 0, NULL);
@@ -175,6 +230,7 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 STDMETHODIMP ShellExt::InvokeCommand(LPCMINVOKECOMMANDINFO pici)
 {
 	BOOL fUnicode = FALSE;
+	int ret;
 
 	/* We're only interested in user actions -
 	 * and if HIWORD(pici->lpVerb) > 0, we've been called programmatically
@@ -185,7 +241,20 @@ STDMETHODIMP ShellExt::InvokeCommand(LPCMINVOKECOMMANDINFO pici)
 	UINT cmd;
 	cmd = LOWORD(pici->lpVerb);
 
-	OnVerbDisplayFileName(pici->hwnd);
+	for (int i = 0; i < nFiles; i++) {
+		if (v_files[i].filename == NULL)
+			continue;
+		if (cmd == IDCMD_ADD) {
+			if (v_files[i].id) v_files[i].blacklisted = 0;
+			ret = docloud_add_file(&v_files[i]);
+			log("add file %s: %d\n", v_files[i].filename, ret);
+		} else if (cmd == IDCMD_REMOVE) {
+			v_files[i].blacklisted = 1;
+			ret = docloud_add_file(&v_files[i]);
+			log("blacklist file %s: %d\n", v_files[i].filename, ret);
+		}
+	}
+	//	OnVerbDisplayFileName(pici->hwnd);
 	return S_OK;
 
 }
@@ -225,7 +294,31 @@ ShellExt::GetPriority(int *priority)
 STDMETHODIMP
 ShellExt::IsMemberOf(PCWSTR pwszPath, DWORD dwAttrib)
 {
-	return S_OK;
+	char filename_utf8[250];
+	struct file_info file;
+	int ret;
+
+	WideCharToMultiByte(CP_UTF8, 0, pwszPath, -1,
+	    filename_utf8, sizeof(filename_utf8), NULL, NULL);
+
+	if (strlen(filename_utf8) < MIN_PATH_LEN)
+		return S_FALSE;
+
+	if (!docloud_is_correct_filetype(filename_utf8)) {
+		return S_FALSE;
+	}
+
+	file.id = -1;
+	file.filename = filename_utf8;
+	//file.parent_flags = DC_PARENT_IGNORE;
+
+	ret = docloud_get_file_info(&file);
+	if (ret == DC_OK && (file.id != -1 || file.parent_flags & DC_PARENT_ADDED)) {
+		if (file.blacklisted)
+			return S_FALSE;
+		return S_OK;
+	}
+	return S_FALSE;
 }
 
 /* }}} END IShellIconOverlayIdentifier Interface */
@@ -233,7 +326,7 @@ ShellExt::IsMemberOf(PCWSTR pwszPath, DWORD dwAttrib)
 void ShellExt::OnVerbDisplayFileName(HWND hWnd)
 {
 	wchar_t szMessage[300];
-	int nFiles;
+	int nFiles = 0;
 
 	if (medium.hGlobal)
 		nFiles = DragQueryFile((HDROP)medium.hGlobal, (UINT)-1, 0, 0);
