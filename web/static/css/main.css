@@ -1,0 +1,23 @@
+em {
+    color: orange;
+}
+
+body {
+    padding-top: 50px;
+}
+.starter-template {
+    padding: 40px 15px;
+}
+
+.search-query-form input {
+    display: inline;
+    width: 60%
+}
+
+.query-result-item .path {
+    color: gray;
+}
+
+.query-result-item .filename{
+    font-weight: bold;
+}
