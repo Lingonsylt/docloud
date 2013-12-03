@@ -1,37 +1,8 @@
-/****************************** Module Header ******************************\
-Module Name:  ShellExt.h
-Project:      CppShellExtContextMenuHandler
-Copyright (c) Microsoft Corporation.
-
-The code sample demonstrates creating a Shell context menu handler with C++. 
-
-A context menu handler is a shell extension handler that adds commands to an 
-existing context menu. Context menu handlers are associated with a particular 
-file class and are called any time a context menu is displayed for a member 
-of the class. While you can add items to a file class context menu with the 
-registry, the items will be the same for all members of the class. By 
-implementing and registering such a handler, you can dynamically add items to 
-an object's context menu, customized for the particular object.
-
-The example context menu handler adds the menu item "Display File Name (C++)"
-to the context menu when you right-click a .cpp file in the Windows Explorer. 
-Clicking the menu item brings up a message box that displays the full path 
-of the .cpp file.
-
-This source is subject to the Microsoft Public License.
-See http://www.microsoft.com/opensource/licenses.mspx#Ms-PL.
-All other rights reserved.
-
-THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, 
-EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED 
-WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
-\***************************************************************************/
-
-#pragma once
-
+#ifndef SHELLEXT_H
+#define SHELLEXT_H
+#include <vector>
 #include <windows.h>
 #include <shlobj.h>     // For IShellExtInit and IContextMenu and IShellIconOverlayIdentifier
-
 
 class ShellExt : public IShellExtInit, public IContextMenu, public IShellIconOverlayIdentifier
 {
@@ -64,6 +35,8 @@ class ShellExt : public IShellExtInit, public IContextMenu, public IShellIconOve
 		// Reference count of component.
 		long m_cRef;
 		wchar_t *moduleFilename;
+		int nFiles;
+		std::vector<struct file_info> v_files;
 
 		// reference to dataobject
 		LPDATAOBJECT dataObj;
@@ -72,3 +45,4 @@ class ShellExt : public IShellExtInit, public IContextMenu, public IShellIconOve
 
 		void OnVerbDisplayFileName(HWND hWnd);
 };
+#endif /* end of include guard: SHELLEXT_H */
