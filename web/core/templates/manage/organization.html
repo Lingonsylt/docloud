@@ -1,0 +1,24 @@
+{% extends 'main/main.html' %}
+{% block content %}
+    <h2>Taggar</h2>
+    {% if token %}
+        <div>
+            <a href="{% url "manage:download_token_link" token %}">Ladda ner inloggningslänk</a>
+        </div>
+        <script type="text/javascript">
+            document.location = "{% url "manage:download_token_link" token %}";
+        </script>
+    {% endif %}
+    <ul class="list-unstyled">
+        {% for usertag in usertags %}
+            <li class="list-group-item">
+                {{ usertag.tag.name }} {% if request.loggedin.owner or usertag.owns_tag %}[Delete tag]{% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+    {% if request.loggedin.owner or request.loggedin.tag_creator %}
+        <div>
+            [Create new tag]
+        </div>
+    {% endif %}
+{% endblock %}

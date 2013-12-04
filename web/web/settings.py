@@ -35,9 +35,11 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'south',
     'indexer',
     'searcher',
-    'core'
+    'core',
+    'bootstrapform'
 )
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR,"static"),)
@@ -51,6 +53,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.auth.LoggedInMiddleware',
     'web.logexception.ExceptionLoggingMiddleware',
 )
 
@@ -98,3 +101,16 @@ STATIC_URL = '/static/'
 SOLR_API_URL = "http://localhost:8983/solr/"
 
 DATA_STORAGE_DIR = os.path.join(BASE_DIR, "data")
+
+AUTHENTICATION_BACKENDS = ('core.auth.AutologinBackend',
+                           'core.auth.TokenLoginBackend',
+                           'django.contrib.auth.backends.ModelBackend')
+
+TEMPLATE_CONTEXT_PROCESSORS = ("django.contrib.auth.context_processors.auth",
+                               "django.core.context_processors.debug",
+                               "django.core.context_processors.i18n",
+                               "django.core.context_processors.media",
+                               "django.core.context_processors.static",
+                               "django.core.context_processors.tz",
+                               "django.contrib.messages.context_processors.messages",
+                               "django.core.context_processors.request")
