@@ -3,8 +3,9 @@ from django.contrib import admin
 admin.autodiscover()
 
 urlpatterns = patterns('',
-     url(r'^search/', include("searcher.urls")),
-     url(r'^index/', include("indexer.urls")),
+     url(r'^search/', include("searcher.urls", namespace = "searcher")),
+     url(r'^index/', include("indexer.urls", namespace = "indexer")),
+     url(r'^manage/', include("core.urls_manage", namespace = "manage")),
 
     url(r'^admin/', include(admin.site.urls)),
 )

@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.http import HttpResponse
 import os
 from web import solr
@@ -22,12 +22,13 @@ def search(request):
             doc["highlight"] = highlights[doc["id"]]["content_txt"][0]
             doc['links'] = []
             for link in doc["links_ss"]:
-                doc['links'].append({"path": os.path.dirname(link) + ("/" if link.find("/") != -1 else "\\"), "filename" : os.path.basename(link)})
+                doc['links'].append({"path": os.path.dirname(link) + ("/" if link.find("/") != -1 else "\\"),
+                                     "filename" : os.path.basename(link)})
 
     if delete:
         solr.deleteAll()
 
-    return render_to_response("searcher/search.html", {'query': query, 'docs': docs})
+    return render(request, "searcher/search.html", {'query': query, 'docs': docs})
 
 def download(request, hash):
     f = open(os.path.join(settings.DATA_STORAGE_DIR, hash), "rb")

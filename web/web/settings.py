@@ -37,7 +37,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'indexer',
     'searcher',
-    'django.contrib.admin',
+    'core'
 )
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR,"static"),)
@@ -64,9 +64,16 @@ WSGI_APPLICATION = 'web.wsgi.application'
 
 DATABASES = {
     'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': "docloud",
+        'HOST': "localhost",
+        'USER': "docloudadmin",
+        'PASSWORD': "docloudadmin",
+    },
+    'sqlite': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+        }
 }
 
 # Internationalization

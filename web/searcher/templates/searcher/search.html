@@ -1,7 +1,7 @@
 {% extends 'main/main.html' %}
 {% block content %}
     <div>
-        <form action="{% url "searcher.views.search" %}" method="GET" role="form" class="search-query-form">
+        <form action="{% url "searcher:views.search" %}" method="GET" role="form" class="search-query-form">
             <div class="form-group">
                 <label for="q" >Sök:</label>
                 <input type="text" id="q" name="q" class="form-control" placeholder="Sök..."{% if query %} value="{{ query }}"{% endif %} />
@@ -20,7 +20,7 @@
                         <div>
                             <ul class="list-unstyled">
                                 <li>
-                                    <span class="path">{{ link.path }}</span><a href="{% url "searcher.views.download" doc.id %}?filename={{ link.filename }}" class="filename">{{ link.filename }}</a>
+                                    <span class="path">{{ link.path }}</span><a href="{% url "searcher:views.download" doc.id %}?filename={{ link.filename }}" class="filename">{{ link.filename }}</a>
                                 </li>
                             </ul>
                         </div>
