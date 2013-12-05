@@ -1,13 +1,13 @@
-{% extends 'main/main.html' %}
+{% extends 'templates/main/main.html' %}
 {% load bootstrap %}
 {% load core_tags %}
 {% block content %}
     {% if token %}
         <div>
-            <a href="{% url "manage:download_token_link" token %}">Ladda ner inloggningslänk</a>
+            <a href="{% url "auth:download_token_link" token %}">Ladda ner inloggningslänk</a>
         </div>
         <script type="text/javascript">
-            document.location = "{% url "manage:download_token_link" token %}";
+            document.location = "{% url "auth:download_token_link" token %}";
         </script>
     {% endif %}
     <div class="panel panel-default">
@@ -18,7 +18,7 @@
                     <li class="list-group-item tag-item">
                         {{ usertag.tag.name }}
                         {% if request.loggedin.owner or usertag.owns_tag %}
-                            {% url "manage:delete_tag" request.loggedin.organization.slug usertag.tag.id as url_delete_tag %}
+                            {% url "tags:delete_tag" request.loggedin.organization.slug usertag.tag.id as url_delete_tag %}
                             {% confirm_delete title="Ta bort?" delete_url="{{ url_delete_tag }}" %}
                                 Är du säker på att du vill ta bort taggen {{ usertag.tag.name }}?
                             {% endconfirm_delete %}
@@ -33,7 +33,7 @@
                                     <li class="list-group-item">
                                         {{ user }}
                                         {% if request.loggedin.owner or usertag.owns_tag %}
-                                            {% url "manage:delete_usertag" request.loggedin.organization.slug usertag.tag.id user.id as url_delete_usertag %}
+                                            {% url "tags:delete_usertag" request.loggedin.organization.slug usertag.tag.id user.id as url_delete_usertag %}
                                             {% confirm_delete title="Ta bort?" delete_url="{{ url_delete_usertag }}" %}
                                                 Är du säker på att du vill ta bort användaren {{ user.email }} från {{ usertag.tag.name }}?
                                             {% endconfirm_delete %}
@@ -43,7 +43,7 @@
                             </ul>
                             {% if request.loggedin.owner or usertag.owns_tag %}
                                 <div class="new-user-form">
-                                    <form class="form-inline" action="{% url "manage:organization" request.loggedin.organization.slug %}" method="POST" role="form">{% csrf_token %}
+                                    <form class="form-inline" action="{% url "tags:organization" request.loggedin.organization.slug %}" method="POST" role="form">{% csrf_token %}
                                         {{ usertag.add_user_form|bootstrap_inline }}
                                         <div class="form-group">
                                             <div class="col-sm-offset-2 col-sm-10">
@@ -59,7 +59,7 @@
             </ul>
             {% if new_tag_form %}
                 <div>
-                    <form class="form-horizontal" action="{% url "manage:organization" request.loggedin.organization.slug %}" method="POST" role="form">{% csrf_token %}
+                    <form class="form-horizontal" action="{% url "tags:organization" request.loggedin.organization.slug %}" method="POST" role="form">{% csrf_token %}
                         {{ new_tag_form|bootstrap_horizontal }}
                         <div class="form-group">
                             <div class="col-sm-offset-2 col-sm-10">
@@ -75,7 +75,7 @@
         <div class="panel panel-default">
             <div class="panel-heading"><h2>Användare</h2></div>
             <div class="panel-body">
-                <form class="form-horizontal" action="{% url "manage:organization" request.loggedin.organization.slug %}" method="POST" role="form">{% csrf_token %}
+                <form class="form-horizontal" action="{% url "tags:organization" request.loggedin.organization.slug %}" method="POST" role="form">{% csrf_token %}
                     {{ new_user_form|bootstrap_horizontal }}
                     <div class="form-group">
                         <div class="col-sm-offset-2 col-sm-10">
