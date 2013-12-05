@@ -9,6 +9,10 @@ from core.views.auth import _createNewUser
 
 
 def _lazyAddUserForm(request, usertags):
+    """
+    If the user is admin, it should be able to see all tags, including ones where it isn't subscribed
+    Create a lazy list of UserTags based on all tags available for the organization, and all marked as "owned"
+    """
     for usertag in usertags:
         def lazyCrateUserForm(usertag):
             def curry():
@@ -66,7 +70,7 @@ def _processNewTagForm(request):
             return NewTagForm(request=request)
     return None
 
-@permission_required('core.is_customer', login_url="/inloggning/")
+@permission_required('core.is_customer', login_url="/auth/inloggning/")
 def delete_tag(request, org_slug, tag_id):
     """
     Delete the tag pointed to by tag_id redirecting to tags:organization when done
@@ -83,7 +87,7 @@ def delete_tag(request, org_slug, tag_id):
             pass
     return redirect(reverse("tags:organization", args=(org.slug,)))
 
-@permission_required('core.is_customer', login_url="/inloggning/")
+@permission_required('core.is_customer', login_url="/auth/inloggning/")
 def delete_usertag(request, org_slug, tag_id, user_id):
     """
     Delete the usertag pointed to by tag_id + user_id, redirecting to tags:organization when done
@@ -108,7 +112,7 @@ def delete_usertag(request, org_slug, tag_id, user_id):
 
 
 
-@permission_required('core.is_customer', login_url="/inloggning/")
+@permission_required('core.is_customer', login_url="/auth/inloggning/")
 def organization(request, org_slug):
     """
     Serve a page listing all tags the user is subscribed to (or all if admin), along with other users subscribed

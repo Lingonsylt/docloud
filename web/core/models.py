@@ -35,6 +35,11 @@ class User(models.Model):
     tags = models.ManyToManyField(Tag, through='UserTag')
     auth_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="docloud_users")
 
+    class Meta:
+        permissions = (
+            ('is_customer', 'Is customer'),
+        )
+
     def __str__(self):
         return self.email
 
@@ -60,11 +65,3 @@ class UUIDLink(models.Model):
     class JoinOrganization:
         def __init__(self, organization_id):
             pass
-
-content_type = ContentType.objects.get_for_model(User)
-is_customer_permission, created = Permission.objects.get_or_create(codename='is_customer',
-                                                          name='Is customer',
-                                                          content_type=content_type)
-customer_group, created = Group.objects.get_or_create(name = "customer")
-customer_group.permissions=[is_customer_permission]
-customer_group.save()

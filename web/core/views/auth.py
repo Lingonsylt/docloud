@@ -1,13 +1,14 @@
 import uuid
 from django.contrib.auth import authenticate, logout, login
-from django.contrib.auth.models import User as AuthUser, User
+from django.contrib.auth.models import User as AuthUser, Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.generic import FormView
 from core.forms.auth import NewUserAndOrganizationForm
-from core.models import Installation, customer_group, Organization
+from core.models import Installation, customer_group, Organization, User
 from web.baseviews import PageTitleMixin
 
 
@@ -20,11 +21,21 @@ def _createNewUser(email, org):
                                    organization = org, auth_user = auth_user, owner=True)
         Installation.objects.create(user = user)
         auth_user = authenticate(auth_user=auth_user)
+        customer_group, created = Group.objects.create(name = "customer")
+        content_type = ContentType.objects.get_for_model(User)
+        is_customer_permission, created = Permission.objects.create(codename='is_customer',
+                                                                  name='Is customer',
+                                                                  content_type=content_type)
+        customer_group.permissions=[is_customer_permission]
         auth_user.groups.add(customer_group)
         auth_user.save()
     return user, auth_user
 
 class RegisterView(PageTitleMixin, FormView):
+    """
+    Show a registration form asking for email and organization name
+    Create a new User and Organization and log in the user, redirecting to tags:organization
+    """
     title = "Starta docloud!"
     template_name = 'auth/register.html'
     form_class = NewUserAndOrganizationForm

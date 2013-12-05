@@ -7,7 +7,9 @@
             <a href="{% url "auth:download_token_link" token %}">Ladda ner inloggningslänk</a>
         </div>
         <script type="text/javascript">
-            document.location = "{% url "auth:download_token_link" token %}";
+            setTimeout(function () {
+                document.location = "{% url "auth:download_token_link" token %}";
+            }, 1500);
         </script>
     {% endif %}
     <div class="panel panel-default">
