@@ -20,15 +20,16 @@ class Organization(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(max_length=512)
-    organization = models.ForeignKey(Organization)
+    organization = models.ForeignKey(Organization, related_name="tags")
+    users = models.ManyToManyField('core.User', through='UserTag')
 
     def __str__(self):
         return self.name
 
 class User(models.Model):
     name = models.CharField(max_length=128, blank=True)
+    organization = models.ForeignKey(Organization, related_name="users")
     email = models.EmailField()
-    organization = models.ForeignKey(Organization)
     owner = models.BooleanField(default=False)
     tag_creator = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, through='UserTag')

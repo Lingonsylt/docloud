@@ -21,3 +21,21 @@ body {
 .query-result-item .filename{
     font-weight: bold;
 }
+
+.inline {
+    display: inline;
+}
+
+.tag-list .tag-item .well {
+    margin-top: 10px;
+}
+
+.new-user-form {
+    margin-top: 15px;
+}
+
+div.popover-content {
+    clear: both;
+    display: table;
+    content: " ";
+}
