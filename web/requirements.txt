@@ -1,0 +1,4 @@
+Django==1.6
+South==0.8.4
+django-bootstrap-form==3.0
+requests==2.0.1
