@@ -3,3 +3,4 @@ South==0.8.4
 django-bootstrap-form==3.0
 mock==1.0.1
 requests==2.0.1
+psycopg2
