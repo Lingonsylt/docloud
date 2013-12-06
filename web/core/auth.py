@@ -1,6 +1,6 @@
 import types
 from core.models import User
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate, logout, login
 from django.contrib.auth.models import User as AuthUser
 
 
@@ -19,7 +19,19 @@ def loggedin(self):
 
 class LoggedInMiddleware(object):
     def process_request(self, request):
+        token = request.META.get("HTTP_X_DOCLOUD_TOKEN")
+        if token:
+            try:
+                auth_user = AuthUser.objects.get(docloud_users__installations__uuid = token)
+                auth_user = authenticate(auth_user=auth_user)
+                logout(request)
+                login(request, auth_user)
+            except AuthUser.DoesNotExist:
+                pass
         setattr(request, "loggedin", types.MethodType(loggedin, request))
+
+        if token:
+            request.loggedin().active_installation = request.loggedin().installations.get(pk=token)
         return None
 
 class TokenLoginBackend(object):

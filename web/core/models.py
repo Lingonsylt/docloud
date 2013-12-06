@@ -35,6 +35,8 @@ class User(models.Model):
     tags = models.ManyToManyField(Tag, through='UserTag')
     auth_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="docloud_users")
 
+    active_installation = None
+
     class Meta:
         permissions = (
             ('is_customer', 'Is customer'),
@@ -44,8 +46,8 @@ class User(models.Model):
         return self.email
 
 class UserTag(models.Model):
-    tag = models.ForeignKey(Tag)
-    user = models.ForeignKey(User)
+    tag = models.ForeignKey(Tag, related_name="usertags")
+    user = models.ForeignKey(User, related_name="usertags")
     owns_tag = models.BooleanField(default=False)
 
     def __str__(self):
