@@ -1,0 +1,16 @@
+<button type="button" class="btn btn-xs popover-target" data-toggle="popover"
+        data-content="{{ message }}
+            {% filter force_escape %}
+                <div class="pull-right">
+                <a href="{{ delete_url|safe }}" class="btn btn-danger btn-xs">OK</a>
+                <button class="btn btn-xs popover-cancel">Avbryt</button>
+                </div>
+            {% endfilter  %}"
+        data-html="true"
+        role="button"
+        data-original-title="{{ title }}
+            {% filter force_escape %}
+                <button class="btn btn-xs pull-right popover-cancel"><span class="glyphicon glyphicon-remove"></span></button>
+            {% endfilter %}">
+    <span class="glyphicon glyphicon-remove"></span>
+</button>

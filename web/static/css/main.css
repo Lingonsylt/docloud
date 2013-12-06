@@ -1,0 +1,41 @@
+em {
+    color: orange;
+}
+
+body {
+    padding-top: 50px;
+}
+.starter-template {
+    padding: 40px 15px;
+}
+
+.search-query-form input {
+    display: inline;
+    width: 60%
+}
+
+.query-result-item .path {
+    color: gray;
+}
+
+.query-result-item .filename{
+    font-weight: bold;
+}
+
+.inline {
+    display: inline;
+}
+
+.tag-list .tag-item .well {
+    margin-top: 10px;
+}
+
+.new-user-form {
+    margin-top: 15px;
+}
+
+div.popover-content {
+    clear: both;
+    display: table;
+    content: " ";
+}

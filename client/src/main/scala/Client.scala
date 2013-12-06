@@ -20,8 +20,8 @@ import org.apache.http.entity.ContentType
 object Client {
   val searchPaths = List("C:\\Users\\lingon\\Desktop")
   val fileExtentions = List("docx", "odt", "pdf", "doc")
-  val mac = getMAC
-  val API_URL = "http://localhost:9000/"
+  val MAC = getMAC
+  val API_URL = "http://localhost:8000/"
 
   def main(args: Array[String]) {
     //println("Hello!")
@@ -74,12 +74,13 @@ object Client {
   }
 
   def queryFiles(files : List[Map[String, Any]]) : JsValue = {
-    jsonRequest("index/query", files.map(
+    jsonRequest("index/query/", files.map(
       (file : Map[String, Any]) => {
         (file("hash"), file("path")) match {
           case (hash: String, path: String) => {
             Map("hash" -> hash,
-                "path" -> path)
+                "path" -> path,
+                "user_id" -> MAC)
           }
         }
       }
@@ -91,7 +92,7 @@ object Client {
     val hash : String = file("hash").asInstanceOf[String]
     val path : String = file("path").asInstanceOf[String]
     val client : HttpClient = new DefaultHttpClient()
-    val post : HttpPost = new HttpPost(API_URL + "index/update")
+    val post : HttpPost = new HttpPost(API_URL + "index/update/")
 
     val entity : MultipartEntity = new MultipartEntity()
     entity.addPart("metadata", new StringBody(Map(

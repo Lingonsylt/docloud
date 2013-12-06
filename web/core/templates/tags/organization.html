@@ -1,0 +1,97 @@
+{% extends 'templates/main/main.html' %}
+{% load bootstrap %}
+{% load core_tags %}
+{% block content %}
+    {% if token %}
+        <div>
+            <a href="{% url "auth:download_token_link" token %}">Ladda ner inloggningslänk</a>
+        </div>
+        <script type="text/javascript">
+            setTimeout(function () {
+                document.location = "{% url "auth:download_token_link" token %}";
+            }, 1500);
+        </script>
+    {% endif %}
+    <div class="panel panel-default">
+        <div class="panel-heading"><h2>Taggar</h2></div>
+        <div class="panel-body">
+            <ul class="list-unstyled tag-list">
+                {% for usertag in usertags %}
+                    <li class="list-group-item tag-item">
+                        {{ usertag.tag.name }}
+                        {% if request.loggedin.owner or usertag.owns_tag %}
+                            {% url "tags:delete_tag" request.loggedin.organization.slug usertag.tag.id as url_delete_tag %}
+                            {% confirm_delete title="Ta bort?" delete_url="{{ url_delete_tag }}" %}
+                                Är du säker på att du vill ta bort taggen {{ usertag.tag.name }}?
+                            {% endconfirm_delete %}
+                        {% endif %}
+
+                        <div class="pull-right">
+                            <button class="btn btn-xs" data-toggle="collapse" data-target=".tag-collapse-{{ forloop.counter0 }}">Användare <span class="glyphicon glyphicon-plus"></span></button>
+                        </div>
+                        <div class="well-sm collapse tag-collapse-{{ forloop.counter0 }}" data-collapse-master="{% filter force_escape %}[data-target=".tag-collapse-{{ forloop.counter0 }}"]{% endfilter %}">
+                            <ul class="list-unstyled">
+                                {% for user in usertag.tag.users.all %}
+                                    <li class="list-group-item">
+                                        {{ user }}
+                                        {% if request.loggedin.owner or usertag.owns_tag %}
+                                            {% url "tags:delete_usertag" request.loggedin.organization.slug usertag.tag.id user.id as url_delete_usertag %}
+                                            {% confirm_delete title="Ta bort?" delete_url="{{ url_delete_usertag }}" %}
+                                                Är du säker på att du vill ta bort användaren {{ user.email }} från {{ usertag.tag.name }}?
+                                            {% endconfirm_delete %}
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                            {% if request.loggedin.owner or usertag.owns_tag %}
+                                <div class="new-user-form">
+                                    <form class="form-inline" action="{% url "tags:organization" request.loggedin.organization.slug %}" method="POST" role="form">{% csrf_token %}
+                                        {{ usertag.add_user_form|bootstrap_inline }}
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-2 col-sm-10">
+                                                <button type="submit" class="btn btn-default">Lägg till användare</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if new_tag_form %}
+                <div>
+                    <form class="form-horizontal" action="{% url "tags:organization" request.loggedin.organization.slug %}" method="POST" role="form">{% csrf_token %}
+                        {{ new_tag_form|bootstrap_horizontal }}
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <button type="submit" class="btn btn-default">Skapa tagg</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% if new_user_form %}
+        <div class="panel panel-default">
+            <div class="panel-heading"><h2>Användare</h2></div>
+            <div class="panel-body">
+                <form class="form-horizontal" action="{% url "tags:organization" request.loggedin.organization.slug %}" method="POST" role="form">{% csrf_token %}
+                    {{ new_user_form|bootstrap_horizontal }}
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <button type="submit" class="btn btn-default">Skapa användare</button>
+                        </div>
+                    </div>
+                    {% if new_user_created %}
+                        <div class="alert alert-success alert-dismissable">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                            Användaren {{ new_user_created.email }} skapades!
+                        </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
