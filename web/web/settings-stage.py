@@ -10,3 +10,5 @@ DATABASES = {
 }
 
 STATIC_URL = '/docloud/static/'
+
+FORCE_SCRIPT_NAME='/docloud'
