@@ -21,7 +21,7 @@ object Client {
   val searchPaths = List("C:\\Users\\lingon\\Desktop")
   val fileExtentions = List("docx", "odt", "pdf", "doc")
   val MAC = getMAC
-  val API_URL = "http://localhost:8000/"
+  val API_URL = "http://fw.naetet.se/docloud/"
 
   def main(args: Array[String]) {
     //println("Hello!")
@@ -112,7 +112,7 @@ object Client {
       case ex: ParsingException => {
         val dbg_file = File.createTempFile("debug_html_", ".html")
         FileUtils.writeStringToFile(dbg_file, responseBody)
-        Runtime.getRuntime.exec("start C:\\Users\\lingon\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe file:///" + dbg_file.getAbsolutePath)
+        Runtime.getRuntime.exec("cmd /c start C:\\Users\\lingon\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe file:///" + dbg_file.getAbsolutePath)
       }
     }
   }
