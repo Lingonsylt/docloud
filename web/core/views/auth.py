@@ -21,9 +21,9 @@ def _createNewUser(email, org):
                                    organization = org, auth_user = auth_user, owner=True)
         Installation.objects.create(user = user)
         auth_user = authenticate(auth_user=auth_user)
-        customer_group, created = Group.objects.create(name = "customer")
+        customer_group, created = Group.objects.get_or_create(name = "customer")
         content_type = ContentType.objects.get_for_model(User)
-        is_customer_permission, created = Permission.objects.create(codename='is_customer',
+        is_customer_permission, created = Permission.objects.get_or_create(codename='is_customer',
                                                                   name='Is customer',
                                                                   content_type=content_type)
         customer_group.permissions=[is_customer_permission]
