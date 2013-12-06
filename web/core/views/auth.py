@@ -8,7 +8,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.generic import FormView
 from core.forms.auth import NewUserAndOrganizationForm
-from core.models import Installation, customer_group, Organization, User
+from core.models import Installation, Organization, User
 from web.baseviews import PageTitleMixin
 
 
