@@ -18,7 +18,7 @@ def _lazyAddUserForm(request, usertags):
             def curry():
                 add_user_form = AddUserForm(tag_id=usertag.tag.id)
                 add_user_form.fields['user'].queryset = add_user_form.fields['user'].queryset. \
-                    filter(organization = request.loggedin().organization).exclude(usertag__tag = usertag.tag)
+                    filter(organization = request.loggedin().organization).exclude(usertags__tag = usertag.tag)
                 return add_user_form
             return curry
         setattr(usertag, "add_user_form", lazyCrateUserForm(usertag))
@@ -101,7 +101,7 @@ def delete_usertag(request, org_slug, tag_id, user_id):
             if usertag.tag.organization == request.loggedin().organization:
                 allowed = True
                 if not request.loggedin().owner and not request.loggedin().tag_creator:
-                    loggedin_usertag = usertag.tag.usertag_set.get(user = request.loggedin())
+                    loggedin_usertag = usertag.tag.usertags.get(user = request.loggedin())
                     if not loggedin_usertag.owns_tag:
                         allowed = False
                 if allowed:
@@ -152,14 +152,14 @@ def organization(request, org_slug):
                 tag = Tag.objects.get(pk=tag_id)
                 add_user_form = AddUserForm(request.POST, tag_id=tag.id)
                 add_user_form.fields['user'].queryset = add_user_form.fields['user'].queryset. \
-                    filter(organization = request.loggedin().organization).exclude(usertag__tag = tag)
+                    filter(organization = request.loggedin().organization).exclude(usertags__tag = tag)
                 if add_user_form.is_valid():
                     UserTag.objects.create(user = add_user_form.cleaned_data["user"], tag = tag, owns_tag = False)
             except Tag.DoesNotExist:
                 pass
     else:
         # Fetch all usertags that this user subscribes to
-        usertags = request.loggedin().usertag_set.all()
+        usertags = request.loggedin().usertags.all()
 
     return render(request, "tags/organization.html", {"TITLE": org.name,
                                                         "org":org,

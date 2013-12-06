@@ -12,13 +12,13 @@ from core.models import Installation, Organization, User
 from web.baseviews import PageTitleMixin
 
 
-def _createNewUser(email, org):
+def _createNewUser(email, org, owner=False):
     with transaction.atomic():
         auth_user = AuthUser.objects.create_user(email,
                                                  email, uuid.uuid1().hex)
 
         user = User.objects.create(name="", email=email,
-                                   organization = org, auth_user = auth_user, owner=True)
+                                   organization = org, auth_user = auth_user, owner=owner)
         Installation.objects.create(user = user)
         auth_user = authenticate(auth_user=auth_user)
         customer_group, created = Group.objects.get_or_create(name = "customer")
@@ -44,7 +44,7 @@ class RegisterView(PageTitleMixin, FormView):
     def form_valid(self, form):
         with transaction.atomic():
             org = Organization.objects.create(name=form.cleaned_data["organization_name"])
-            user, auth_user = _createNewUser(form.cleaned_data["email"], org)
+            user, auth_user = _createNewUser(form.cleaned_data["email"], org, owner=True)
             logout(self.request)
             login(self.request, auth_user)
             self.success_url = reverse("tags:organization", args=(org.slug,)) + "?token"
