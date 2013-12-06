@@ -4,7 +4,7 @@
 CFLAGS+=-DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0600
 CXXFLAGS+=-DUNICODE -D_UNICODE -std=c++11 -g -D_WIN32_WINNT=0x0600
 LDFLAGS+=-g
-OBJS=main.o dirwatcher.o
+OBJS=main.o dirwatcher.o service.o
 
 .PHONY: clean
 
