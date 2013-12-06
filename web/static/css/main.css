@@ -39,3 +39,11 @@ div.popover-content {
     display: table;
     content: " ";
 }
+
+.search-result-list .well {
+    margin-bottom: 5px;
+}
+
+.search-result-list ul {
+    margin-bottom: 5px;
+}
