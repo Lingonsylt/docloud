@@ -12,3 +12,10 @@ class ActivatedFormMixin(forms.Form):
 
     def is_active(self):
         return self.data.get("form_id") == self.form_id_str
+
+class RequestRequiredMixin(forms.Form):
+    def __init__(self, *args, request = None, **kwargs):
+        if request is None:
+            raise ValueError("Request can not be None!")
+        self.request = request
+        super().__init__(*args, **kwargs)

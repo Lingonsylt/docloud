@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from core.models import User, Tag
-from web.forms import ActivatedFormMixin
+from web.forms import ActivatedFormMixin, RequestRequiredMixin
 from django.utils.translation import ugettext as _
 
 class NewUserForm(ActivatedFormMixin, forms.Form):
@@ -17,15 +17,9 @@ class NewUserForm(ActivatedFormMixin, forms.Form):
                 )
         return self.cleaned_data["email"]
 
-class NewTagForm(ActivatedFormMixin, forms.Form):
+class NewTagForm(RequestRequiredMixin, ActivatedFormMixin, forms.Form):
     name = forms.CharField(max_length=512, label="Ny tagg", required=True)
     form_id_str = "new_tag_form"
-
-    def __init__(self, *args, request = None, **kwargs):
-        if request is None:
-            raise ValueError("Request can not be None!")
-        self.request = request
-        super().__init__(*args, **kwargs)
 
     def clean_name(self):
         if len(Tag.objects.filter(organization = self.request.loggedin().organization, name = self.cleaned_data["name"])) > 0:

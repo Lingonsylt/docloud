@@ -1,16 +1,14 @@
 import uuid
 from django.contrib.auth import authenticate, logout, login
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User as AuthUser, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from django.views.generic import FormView
-from core.forms.auth import NewUserAndOrganizationForm
+from core.forms.auth import NewUserAndOrganizationForm, ChangeEmailForm, ChangePasswordForm, LoginForm
 from core.models import Installation, Organization, User
-from web.baseviews import PageTitleMixin
-
 
 def _createNewUser(email, org, owner=False):
     with transaction.atomic():
@@ -31,25 +29,39 @@ def _createNewUser(email, org, owner=False):
         auth_user.save()
     return user, auth_user
 
-class RegisterView(PageTitleMixin, FormView):
-    """
-    Show a registration form asking for email and organization name
-    Create a new User and Organization and log in the user, redirecting to tags:organization
-    """
-    title = "Starta docloud!"
-    template_name = 'auth/register.html'
-    form_class = NewUserAndOrganizationForm
-    success_url = None
-
-    def form_valid(self, form):
+def auth_register(request):
+    register_form = NewUserAndOrganizationForm(request.POST)
+    if register_form.is_valid():
         with transaction.atomic():
-            org = Organization.objects.create(name=form.cleaned_data["organization_name"])
-            user, auth_user = _createNewUser(form.cleaned_data["email"], org, owner=True)
-            logout(self.request)
-            login(self.request, auth_user)
-            self.success_url = reverse("tags:organization", args=(org.slug,)) + "?token"
-        return super().form_valid(form)
+            org = Organization.objects.create(name=register_form.cleaned_data["organization_name"])
+            user, auth_user = _createNewUser(register_form.cleaned_data["email"], org, owner=True)
+            logout(request)
+            login(request, auth_user)
+        return redirect(reverse("tags:organization", args=(org.slug,)) + "?token")
+    return _auth(request, register_form=register_form)
 
+def auth_login(request):
+    login_form = LoginForm(request.POST)
+    if login_form.is_valid():
+        auth_user = authenticate(username=login_form.cleaned_data["email"], password=login_form.cleaned_data["password"])
+        logout(request)
+        login(request, auth_user)
+        return redirect(reverse("searcher:search"))
+    return _auth(request, login_form=login_form)
+
+def auth(request):
+    return _auth(request)
+
+def _auth(request, register_form=None, login_form=None):
+    if not register_form:
+        register_form = NewUserAndOrganizationForm()
+    if not login_form:
+        login_form = LoginForm()
+    return render(request, "auth/auth.html", {"TITLE":"Registera / Logga in",
+                                                 "register_form": register_form,
+                                                 "login_form": login_form})
+
+@login_required
 def link_download(request, token):
     """
     Return a docloud.url file pointing to the loginpage using token
@@ -66,10 +78,51 @@ def token_login(request, token):
     Login a user based on a token
     Relies on core.auth.TokenLoginBackend
     """
-    logout(request)
     auth_user = authenticate(token = token)
-    login(request, auth_user)
     if auth_user:
+        logout(request)
+        login(request, auth_user)
         return redirect(reverse("tags:organization", args=(auth_user.docloud_users.get().organization.slug,)))
     else:
         return render(request, "auth/login_failed.html", {"TITLE":"Inloggningen misslyckades"})
+
+@login_required
+def profile_change_email(request):
+    change_email_form = ChangeEmailForm(request.POST, request=request)
+    if change_email_form.is_valid():
+        with transaction.atomic():
+            request.loggedin().email = change_email_form.cleaned_data["email"]
+            request.user.email = change_email_form.cleaned_data["email"]
+            request.user.username = change_email_form.cleaned_data["email"]
+            request.loggedin().save()
+            request.user.save()
+        return _profile(request, email_changed=True)
+    return _profile(request, change_email_form=change_email_form)
+
+@login_required
+def profile_change_password(request):
+    change_password_form = ChangePasswordForm(request.POST, request=request)
+    if change_password_form.is_valid():
+        with transaction.atomic():
+            request.loggedin().has_password = True
+            request.loggedin().save()
+            request.user.set_password(change_password_form.cleaned_data["password"])
+            request.user.save()
+        return _profile(request, password_changed=True)
+    return _profile(request, change_password_form=change_password_form)
+
+@login_required
+def profile(request):
+    return _profile(request)
+
+def _profile(request, change_email_form=None, email_changed=False, change_password_form=None, password_changed=False):
+    if not change_email_form:
+        change_email_form = ChangeEmailForm(request=request)
+    if not change_password_form:
+        change_password_form = ChangePasswordForm(request=request)
+    return render(request, "auth/profile.html", {"TITLE":"Profil",
+                                                 "change_email_form": change_email_form,
+                                                 "email_changed": email_changed,
+                                                 "change_password_form": change_password_form,
+                                                 "password_changed": password_changed})
+
