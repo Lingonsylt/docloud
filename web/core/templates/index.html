@@ -1,0 +1,10 @@
+{% extends 'templates/main/main.html' %}
+{% block content %}
+    {% if request.loggedin %}
+        Redigera taggar eller användare för
+        <a href="{% url "tags:organization" request.loggedin.organization.slug %}">
+            {{ request.loggedin.organization.name }}</a> eller <a href="{% url "searcher:search" %}">Sök</a>
+    {% else %}
+        Du är ej inloggad. <a href="{% url "auth:auth" %}">Registrera dig nu eller logga in!</a>
+    {% endif %}
+{% endblock %}
