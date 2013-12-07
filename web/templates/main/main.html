@@ -1,4 +1,5 @@
 {% load staticfiles %}
+{% load core_tags %}
 <!DOCTYPE html>
 <html>
     <head>
@@ -18,13 +19,27 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" href="#">Project name</a>
+                    <a class="navbar-brand" href="/">Docloud</a>
                 </div>
                 <div class="collapse navbar-collapse">
                     <ul class="nav navbar-nav">
-                        <li class="active"><a href="#">Home</a></li>
-                        <li><a href="#about">About</a></li>
-                        <li><a href="#contact">Contact</a></li>
+                        {% if request.loggedin %}
+                            <li class="{% nav_active request "/sok/" %}"><a href="{% url "searcher:search" %}">Sök</a></li>
+                            <li class="{% nav_active request "/org/" %}"><a href="{% url "tags:organization" request.loggedin.organization.slug %}">{{ request.loggedin.organization.name }}</a></li>
+                        {% else %}
+                            <li class="{% nav_active request "/" %}"><a href="{% url "searcher:search" %}">Docloud</a></li>
+                        {% endif %}
+                        <li class="{% nav_active request "/inloggning" %}{% nav_active request "/registrera" %}{% nav_active request "/profil" %}">
+                            {% if request.loggedin %}
+                                <a href="{% url "auth:profile" %}">
+                                    {{ request.loggedin.email }}
+                                </a>
+                            {% else %}
+                                <a href="{% url "auth:auth" %}">
+                                    Registrera / Logga in
+                                </a>
+                            {% endif %}
+                        </li>
                     </ul>
                 </div><!--/.nav-collapse -->
             </div>

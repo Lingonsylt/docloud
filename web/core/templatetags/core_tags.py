@@ -25,3 +25,15 @@ class UpperNode(template.Node):
         context.update(values)
         context["message"] = self.nodelist.render(context)
         return self.inclusion_template.render(context)
+
+@register.simple_tag
+def nav_active(request, pattern):
+    import re
+    if pattern == "/":
+        if request.path == "/":
+            return 'active'
+        else:
+            return ''
+    elif re.search(pattern, request.path):
+        return 'active'
+    return ''
