@@ -34,6 +34,7 @@ class User(models.Model):
     tag_creator = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, through='UserTag')
     auth_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="docloud_users")
+    has_password = models.BooleanField(default=False)
 
     active_installation = None
 
