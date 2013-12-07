@@ -160,3 +160,6 @@ LOGGING = {
             },
         }
 }
+
+
+LOGIN_URL = "/auth/inloggning/"

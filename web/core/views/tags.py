@@ -1,4 +1,4 @@
-from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.decorators import permission_required, login_required
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.http import Http404
@@ -66,11 +66,10 @@ def _processNewTagForm(request):
                         UserTag.objects.create(user = request.loggedin(), tag = new_tag, owns_tag = True)
                 else:
                     return new_tag_form
-        else:
-            return NewTagForm(request=request)
+        return NewTagForm(request=request)
     return None
 
-@permission_required('core.is_customer', login_url="/auth/inloggning/")
+@login_required
 def delete_tag(request, org_slug, tag_id):
     """
     Delete the tag pointed to by tag_id redirecting to tags:organization when done
@@ -87,7 +86,7 @@ def delete_tag(request, org_slug, tag_id):
             pass
     return redirect(reverse("tags:organization", args=(org.slug,)))
 
-@permission_required('core.is_customer', login_url="/auth/inloggning/")
+@login_required
 def delete_usertag(request, org_slug, tag_id, user_id):
     """
     Delete the usertag pointed to by tag_id + user_id, redirecting to tags:organization when done
@@ -112,7 +111,7 @@ def delete_usertag(request, org_slug, tag_id, user_id):
 
 
 
-@permission_required('core.is_customer', login_url="/auth/inloggning/")
+@login_required
 def organization(request, org_slug):
     """
     Serve a page listing all tags the user is subscribed to (or all if admin), along with other users subscribed

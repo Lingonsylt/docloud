@@ -1,5 +1,6 @@
 from functools import reduce
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.http import HttpResponse
 import os
@@ -9,6 +10,7 @@ import logging
 logger = logging.getLogger("django.request")
 from django.db.models import Q
 
+@login_required
 def search(request):
     query = request.GET.get('q', "")
     delete = query.find("#delete") != -1
@@ -45,7 +47,9 @@ def search(request):
 
     return render(request, "searcher/search.html", {'query': query, 'docs': docs})
 
+@login_required
 def download(request, hash_):
+    # TODO: Check authorization for the file
     f = open(os.path.join(settings.DATA_STORAGE_DIR, hash_), "rb")
     response = HttpResponse(f, content_type="application/octet-stream")
     response['Content-Disposition'] = 'attachment; filename="%s"' % request.GET["filename"]
