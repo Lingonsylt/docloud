@@ -2,8 +2,7 @@ import json
 import types
 from django.test import TestCase
 import mock
-from core.models import Organization, Tag, UserTag
-from core.views.auth import _createNewUser
+from core.models import User
 from indexer.views import index_query
 from django.test.client import RequestFactory
 
@@ -13,39 +12,23 @@ def j(o):
 class AuthorizedRequestFactory(RequestFactory):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._org = Organization.objects.create(name="Test Organization")
-        self._user, self._auth_user = _createNewUser("test@test.com", self._org, True)
+        self._user = User.objects.get(email="test@test.com")
 
     def request(self, **request):
         r = super().request(**request)
-        setattr(r, "user", self._auth_user)
+        setattr(r, "user", self._user.auth_user)
         setattr(r, "_user", self._user)
         def loggedin(self):
             return self._user
         setattr(r, "loggedin", types.MethodType(loggedin, r))
         return r
 
-    def tearDown(self):
-        self._user.delete()
-        self._auth_user.delete()
-        self._org.delete()
-
 # Create your tests here.
 class TestQuery(TestCase):
+    fixtures = ["small.json"]
+
     def setUp(self):
         self.rfactory = AuthorizedRequestFactory()
-        self.tag1 = Tag.objects.create(name="Tag1", organization=self.rfactory._org)
-        self.tag1.save()
-        self.tag2 = Tag.objects.create(name="Tag2", organization=self.rfactory._org)
-        self.tag2.save()
-        self.usertag = UserTag(user=self.rfactory._user, tag=self.tag1)
-        self.usertag.save()
-
-    def tearDown(self):
-        self.usertag.delete()
-        self.rfactory.tearDown()
-        self.tag1.delete()
-        self.tag2.delete()
 
     def _getCallArgs(self, func):
         results = []
@@ -72,10 +55,10 @@ class TestQuery(TestCase):
 
     @mock.patch("indexer.views.solr", autospec=True)
     def test_no_link(self, solr_mock):
-        solr_mock.get.return_value = {"doc":{"links_ss":["C:\\file.txt"], "tags":[self.tag1.id]}}
+        solr_mock.get.return_value = {"doc":{"links_ss":["C:\\file.txt"], "tags":[self.rfactory._user.tags.get(name="test-ab-tag").id]}}
         solr_mock.update.return_value = {"responseHeader":{"status":0}}
 
-        request = self.rfactory.post('', data = json.dumps([{"hash":"abc", "path":"C:\\file.txt", "tags":[self.tag1.id]}]), content_type="application/json")
+        request = self.rfactory.post('', data = json.dumps([{"hash":"abc", "path":"C:\\file.txt", "tags":[self.rfactory._user.tags.get(name="test-ab-tag").id]}]), content_type="application/json")
         response = index_query(request)
 
         called_args = self._getCallArgs(solr_mock.update)
@@ -88,10 +71,10 @@ class TestQuery(TestCase):
 
     @mock.patch("indexer.views.solr", autospec=True)
     def test_link(self, solr_mock):
-        solr_mock.get.return_value = {"doc":{"links_ss":["C:\\file.txt"], "tags":[self.tag1.id]}}
+        solr_mock.get.return_value = {"doc":{"links_ss":["C:\\file.txt"], "tags":[self.rfactory._user.tags.get(name="test-ab-tag").id]}}
         solr_mock.update.return_value = {"responseHeader":{"status":0}}
 
-        request = self.rfactory.post('', data = json.dumps([{"hash":"abc", "path":"C:\\file2.txt", "tags":[self.tag1.id]}]), content_type="application/json")
+        request = self.rfactory.post('', data = json.dumps([{"hash":"abc", "path":"C:\\file2.txt", "tags":[self.rfactory._user.tags.get(name="test-ab-tag").id]}]), content_type="application/json")
         response = index_query(request)
 
         called_args = self._getCallArgs(solr_mock.update)
@@ -108,10 +91,10 @@ class TestQuery(TestCase):
 
     @mock.patch("indexer.views.solr", autospec=True)
     def test_parsed(self, solr_mock):
-        solr_mock.get.return_value = {"doc":{"links_ss":["C:\\file.txt"], "parsed_b":True, "tags":[self.tag1.id]}}
+        solr_mock.get.return_value = {"doc":{"links_ss":["C:\\file.txt"], "parsed_b":True, "tags":[self.rfactory._user.tags.get(name="test-ab-tag").id]}}
         solr_mock.update.return_value = {"responseHeader":{"status":0}}
 
-        request = self.rfactory.post('', data = json.dumps([{"hash":"abc", "path":"C:\\file.txt", "tags":[self.tag1.id]}]), content_type="application/json")
+        request = self.rfactory.post('', data = json.dumps([{"hash":"abc", "path":"C:\\file.txt", "tags":[self.rfactory._user.tags.get(name="test-ab-tag").id]}]), content_type="application/json")
         response = index_query(request)
         self.assertEqual(response.content, j({"results":[{"hash":"abc", "index":False}], "success":True}))
 

@@ -1,0 +1,663 @@
+[
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "admin",
+            "model": "logentry",
+            "name": "log entry"
+        },
+        "pk": 1
+    },
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "auth",
+            "model": "permission",
+            "name": "permission"
+        },
+        "pk": 2
+    },
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "auth",
+            "model": "group",
+            "name": "group"
+        },
+        "pk": 3
+    },
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "auth",
+            "model": "user",
+            "name": "user"
+        },
+        "pk": 4
+    },
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "contenttypes",
+            "model": "contenttype",
+            "name": "content type"
+        },
+        "pk": 5
+    },
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "sessions",
+            "model": "session",
+            "name": "session"
+        },
+        "pk": 6
+    },
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "south",
+            "model": "migrationhistory",
+            "name": "migration history"
+        },
+        "pk": 7
+    },
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "core",
+            "model": "organization",
+            "name": "organization"
+        },
+        "pk": 8
+    },
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "core",
+            "model": "tag",
+            "name": "tag"
+        },
+        "pk": 9
+    },
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "core",
+            "model": "user",
+            "name": "user"
+        },
+        "pk": 10
+    },
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "core",
+            "model": "usertag",
+            "name": "user tag"
+        },
+        "pk": 11
+    },
+    {
+        "model": "contenttypes.contenttype",
+        "fields": {
+            "app_label": "core",
+            "model": "installation",
+            "name": "installation"
+        },
+        "pk": 12
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 1,
+            "codename": "add_logentry",
+            "name": "Can add log entry"
+        },
+        "pk": 1
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 1,
+            "codename": "change_logentry",
+            "name": "Can change log entry"
+        },
+        "pk": 2
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 1,
+            "codename": "delete_logentry",
+            "name": "Can delete log entry"
+        },
+        "pk": 3
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 2,
+            "codename": "add_permission",
+            "name": "Can add permission"
+        },
+        "pk": 4
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 2,
+            "codename": "change_permission",
+            "name": "Can change permission"
+        },
+        "pk": 5
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 2,
+            "codename": "delete_permission",
+            "name": "Can delete permission"
+        },
+        "pk": 6
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 3,
+            "codename": "add_group",
+            "name": "Can add group"
+        },
+        "pk": 7
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 3,
+            "codename": "change_group",
+            "name": "Can change group"
+        },
+        "pk": 8
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 3,
+            "codename": "delete_group",
+            "name": "Can delete group"
+        },
+        "pk": 9
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 4,
+            "codename": "add_user",
+            "name": "Can add user"
+        },
+        "pk": 10
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 4,
+            "codename": "change_user",
+            "name": "Can change user"
+        },
+        "pk": 11
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 4,
+            "codename": "delete_user",
+            "name": "Can delete user"
+        },
+        "pk": 12
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 5,
+            "codename": "add_contenttype",
+            "name": "Can add content type"
+        },
+        "pk": 13
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 5,
+            "codename": "change_contenttype",
+            "name": "Can change content type"
+        },
+        "pk": 14
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 5,
+            "codename": "delete_contenttype",
+            "name": "Can delete content type"
+        },
+        "pk": 15
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 6,
+            "codename": "add_session",
+            "name": "Can add session"
+        },
+        "pk": 16
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 6,
+            "codename": "change_session",
+            "name": "Can change session"
+        },
+        "pk": 17
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 6,
+            "codename": "delete_session",
+            "name": "Can delete session"
+        },
+        "pk": 18
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 7,
+            "codename": "add_migrationhistory",
+            "name": "Can add migration history"
+        },
+        "pk": 19
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 7,
+            "codename": "change_migrationhistory",
+            "name": "Can change migration history"
+        },
+        "pk": 20
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 7,
+            "codename": "delete_migrationhistory",
+            "name": "Can delete migration history"
+        },
+        "pk": 21
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 8,
+            "codename": "add_organization",
+            "name": "Can add organization"
+        },
+        "pk": 22
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 8,
+            "codename": "change_organization",
+            "name": "Can change organization"
+        },
+        "pk": 23
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 8,
+            "codename": "delete_organization",
+            "name": "Can delete organization"
+        },
+        "pk": 24
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 9,
+            "codename": "add_tag",
+            "name": "Can add tag"
+        },
+        "pk": 25
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 9,
+            "codename": "change_tag",
+            "name": "Can change tag"
+        },
+        "pk": 26
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 9,
+            "codename": "delete_tag",
+            "name": "Can delete tag"
+        },
+        "pk": 27
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 10,
+            "codename": "add_user",
+            "name": "Can add user"
+        },
+        "pk": 28
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 10,
+            "codename": "change_user",
+            "name": "Can change user"
+        },
+        "pk": 29
+    },
+    {
+        "model": "auth.permission",
+        "fields": {
+            "content_type": 10,
+            "codename": "delete_user",
+            "name": "Can delete user"
+        },
+        "pk": 30
+    },
+    {
+        "model": "auth.group",
+        "fields": {
+            "permissions": [],
+            "name": "customer"
+        },
+        "pk": 1
+    },
+    {
+        "pk": 21,
+        "model": "core.organization",
+        "fields": {
+            "name": "Docloud AB",
+            "slug": "docloud-ab"
+        }
+    },
+    {
+        "pk": 22,
+        "model": "core.organization",
+        "fields": {
+            "name": "Asd AB",
+            "slug": "asd-ab"
+        }
+    },
+    {
+        "pk": 25,
+        "model": "core.organization",
+        "fields": {
+            "name": "Test AB",
+            "slug": "test"
+        }
+    },
+    {
+        "pk": 26,
+        "model": "core.organization",
+        "fields": {
+            "name": "CIA",
+            "slug": "cia"
+        }
+    },
+    {
+        "pk": 16,
+        "model": "core.tag",
+        "fields": {
+            "name": "test-ab-tag",
+            "organization": 25
+        }
+    },
+    {
+        "pk": 17,
+        "model": "core.tag",
+        "fields": {
+            "name": "test-ab-tag2",
+            "organization": 25
+        }
+    },
+    {
+        "pk": 17,
+        "model": "core.tag",
+        "fields": {
+            "name": "asd-ab-tag",
+            "organization": 22
+        }
+    },
+    {
+        "pk": 30,
+        "model": "core.usertag",
+        "fields": {
+            "owns_tag": true,
+            "tag": 16,
+            "user": 23
+        }
+    },
+    {
+        "pk": 31,
+        "model": "core.usertag",
+        "fields": {
+            "owns_tag": true,
+            "tag": 17,
+            "user": 23
+        }
+    },
+    {
+        "pk": 33,
+        "model": "core.usertag",
+        "fields": {
+            "owns_tag": false,
+            "tag": 16,
+            "user": 24
+        }
+    },
+    {
+        "pk": "07b9141c5f5011e3864590e6ba0d52ef",
+        "model": "core.installation",
+        "fields": {
+            "user": 25
+        }
+    },
+    {
+        "pk": "0b994f865e9e11e3aaf990e6ba0d52ef",
+        "model": "core.installation",
+        "fields": {
+            "user": 24
+        }
+    },
+    {
+        "pk": "5c3780885e7511e3929c90e6ba0d52ef",
+        "model": "core.installation",
+        "fields": {
+            "user": 21
+        }
+    },
+    {
+        "pk": "5c8af4945e8811e3ab5790e6ba0d52ef",
+        "model": "core.installation",
+        "fields": {
+            "user": 23
+        }
+    },
+    {
+        "pk": "67f7cab65e7511e3820090e6ba0d52ef",
+        "model": "core.installation",
+        "fields": {
+            "user": 22
+        }
+    },
+    {
+        "pk": 27,
+        "model": "auth.user",
+        "fields": {
+            "groups": [1],
+            "last_name": "",
+            "is_staff": false,
+            "is_active": true,
+            "email": "anton@naetet.se",
+            "first_name": "",
+            "last_login": "2013-12-06T12:53:10.294Z",
+            "date_joined": "2013-12-06T12:53:10.192Z",
+            "is_superuser": false,
+            "username": "anton@naetet.se",
+            "password": "pbkdf2_sha256$12000$gR7PlFZhHZKq$JgaKAOXZf3KNhlRX00aqOkbAjMkmqofJM21IyLH+W/k=",
+            "user_permissions": []
+        }
+    },
+    {
+        "pk": 28,
+        "model": "auth.user",
+        "fields": {
+            "groups": [1],
+            "last_name": "",
+            "is_staff": false,
+            "is_active": true,
+            "email": "asd@asd.com",
+            "first_name": "",
+            "last_login": "2013-12-06T12:53:29.993Z",
+            "date_joined": "2013-12-06T12:53:29.895Z",
+            "is_superuser": false,
+            "username": "asd@asd.com",
+            "password": "pbkdf2_sha256$12000$VL1cga2A2Cjg$hbj8Ezjjxu8D0gPLkgdtkLp96l1KnzhS+cb2pV1cNhc=",
+            "user_permissions": []
+        }
+    },
+    {
+        "pk": 31,
+        "model": "auth.user",
+        "fields": {
+            "groups": [1],
+            "last_name": "",
+            "is_staff": false,
+            "is_active": true,
+            "email": "asd2@asd.com",
+            "first_name": "",
+            "last_login": "2013-12-07T15:28:28.885Z",
+            "date_joined": "2013-12-06T15:09:11.172Z",
+            "is_superuser": false,
+            "username": "asd2@asd.com",
+            "password": "pbkdf2_sha256$12000$QZHpNSL1TdhC$/OHzcG50QzFK83f5U1zooXQUUa4OoLBWWh5hkn+Qr2E=",
+            "user_permissions": []
+        }
+    },
+    {
+        "pk": 32,
+        "model": "auth.user",
+        "fields": {
+            "groups": [1],
+            "last_name": "",
+            "is_staff": false,
+            "is_active": true,
+            "email": "test2@test.com",
+            "first_name": "",
+            "last_login": "2013-12-07T14:58:05.205Z",
+            "date_joined": "2013-12-06T17:44:24.299Z",
+            "is_superuser": false,
+            "username": "asd6@asd.com",
+            "password": "pbkdf2_sha256$12000$qcOsyyxpG1G1$AZFHnmSXtt+PhIgy/0Obc1WSOrXcYLSRzsS7HhJ/QTc=",
+            "user_permissions": []
+        }
+    },
+    {
+        "pk": 33,
+        "model": "auth.user",
+        "fields": {
+            "groups": [1],
+            "last_name": "",
+            "is_staff": false,
+            "is_active": true,
+            "email": "agent@cia.gov",
+            "first_name": "",
+            "last_login": "2013-12-07T14:58:28.351Z",
+            "date_joined": "2013-12-07T14:58:28.172Z",
+            "is_superuser": false,
+            "username": "asd7@asd.com",
+            "password": "pbkdf2_sha256$12000$5AhSAABxiZuE$WxOWOaw29tpo97hXex2jPDowbKCcaQ2z949kaj+WYxc=",
+            "user_permissions": []
+        }
+    },
+    {
+        "pk": 21,
+        "model": "core.user",
+        "fields": {
+            "name": "",
+            "auth_user": 27,
+            "organization": 21,
+            "tag_creator": false,
+            "has_password": false,
+            "email": "anton@naetet.se",
+            "owner": true
+        }
+    },
+    {
+        "pk": 22,
+        "model": "core.user",
+        "fields": {
+            "name": "",
+            "auth_user": 28,
+            "organization": 22,
+            "tag_creator": false,
+            "has_password": false,
+            "email": "asd@asd.com",
+            "owner": true
+        }
+    },
+    {
+        "pk": 23,
+        "model": "core.user",
+        "fields": {
+            "name": "",
+            "auth_user": 31,
+            "organization": 25,
+            "tag_creator": false,
+            "has_password": false,
+            "email": "test@test.com",
+            "owner": true
+        }
+    },
+    {
+        "pk": 24,
+        "model": "core.user",
+        "fields": {
+            "name": "",
+            "auth_user": 32,
+            "organization": 25,
+            "tag_creator": false,
+            "has_password": true,
+            "email": "test2@test.com",
+            "owner": false
+        }
+    },
+    {
+        "pk": 25,
+        "model": "core.user",
+        "fields": {
+            "name": "",
+            "auth_user": 33,
+            "organization": 26,
+            "tag_creator": false,
+            "has_password": false,
+            "email": "agent@cia.gov",
+            "owner": true
+        }
+    }
+]
+
+

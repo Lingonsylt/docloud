@@ -61,10 +61,10 @@ class Installation(models.Model):
     def __str__(self):
         return "%s inst: %s" % (self.user.name, self.uuid)
 
-class UUIDLink(models.Model):
-    uuid = models.CharField(primary_key=True, max_length=32, default=lambda: uuid.uuid1().hex)
-    data = models.TextField()
+#class UUIDLink(models.Model):
+#    uuid = models.CharField(primary_key=True, max_length=32, default=lambda: uuid.uuid1().hex)
+#    data = models.TextField()
 
-    class JoinOrganization:
-        def __init__(self, organization_id):
-            pass
+#    class JoinOrganization:
+#        def __init__(self, organization_id):
+#            pass

@@ -163,3 +163,5 @@ LOGGING = {
 
 
 LOGIN_URL = "/auth/inloggning/"
+
+FIXTURE_DIRS = (os.path.join(BASE_DIR, "fixtures"),)
