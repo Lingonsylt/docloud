@@ -8,5 +8,12 @@ CFLAGS=-L%rootdir%\lib\win64\debug -I %rootdir%\include\windows\crtl -I %rootdir
 LDFLAGS= -shared -s -Wl,--subsystem,windows,--out-implib,$@.a
 CC=gcc
 
+.PHONY: clean
+
+all: sqlite3.dll
+
 sqlite3.dll: sqlite3.o shell.o
 	$(CC) -o $@ $^ $(LDFLAGS)
+
+clean:
+	-rm -f sqlite3.o shell.o sqlite3.dll
