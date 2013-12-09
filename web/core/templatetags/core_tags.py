@@ -19,10 +19,15 @@ class UpperNode(template.Node):
         self.nodelist = nodelist
         self.extra_context = extra_content
         self.inclusion_template = loader.get_template("templatetags/_confirm_delete.html")
+
     def render(self, context):
         values = dict([(key, loader.Template(val.resolve(context)).render(context)) for key, val in
                        six.iteritems(self.extra_context)])
-        context.update(values)
+
+        # Doing context.update(values) mutates the context in an unexpected way that brakes for-loops in very specific
+        # circumstances. See test: core.tests.TestOrganization.test_confirm_delete_tag
+        for key, val in values.items():
+            context[key] = val
         context["message"] = self.nodelist.render(context)
         return self.inclusion_template.render(context)
 
