@@ -2,9 +2,10 @@
 # Note - our SRW-locks in dirwatcher.cpp requires Vista or later!,
 # thus, we have our _WIN32_WINNT=0x0600
 CFLAGS+=-DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0600
-CXXFLAGS+=-DUNICODE -D_UNICODE -std=c++11 -g -D_WIN32_WINNT=0x0600
+CXXFLAGS+=-DUNICODE -D_UNICODE -std=c++11 -g -D_WIN32_WINNT=0x0600 -I../shared -I../shared/sqlite3
 LDFLAGS+=-g
-OBJS=main.o dirwatcher.o service.o
+LIBS+=-lshlwapi -L../shared/sqlite3 -lsqlite3 -lole32
+OBJS=main.o dirwatcher.o service.o sqlite.o ../shared/reg.o
 
 .PHONY: clean
 
@@ -14,3 +15,4 @@ docloud-svc.exe: $(OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 clean:
 	-rm -f docloud-svc.exe $(OBJS)
+

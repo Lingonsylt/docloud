@@ -3,6 +3,7 @@
 #include <getopt.h>
 #include "dirwatcher.h"
 #include "service.h"
+#include "sqlite.h"
 
 DWORD WINAPI  (__stdcall *service_exec_function)(LPVOID) = NULL;
 extern int service_is_running;
@@ -30,8 +31,12 @@ const wchar_t *list[] = {
 DWORD WINAPI main_loop(LPVOID param)
 {
 	dirWatcher *d = new dirWatcher;
+	sqliteWatcher *sqlw = new sqliteWatcher();
 	unsigned long threadid;
 
+	sqlw->watch();
+
+	return 0;
 	d->addDirectory(L"h:\\temp\\ab\\");
 	d->addDirectory(L"h:\\temp");
 	CreateThread(NULL, 0, thread_watch, d, 0, &threadid);
@@ -40,7 +45,9 @@ DWORD WINAPI main_loop(LPVOID param)
 	CreateThread(NULL, 0, thread_work, d, 0, &threadid);
 	wprintf(L"Created worker thread %d\n", threadid);
 
-	Sleep(50*1000);
+	d->checkDBforUpdates();
+	delete d;
+
 	return 0;
 }
 
