@@ -2,6 +2,9 @@
 #define REG_H
 #include <windows.h>
 
+HRESULT RegSetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PCWSTR data);
+HRESULT RegGetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PWSTR data, DWORD data_sz);
+
 HRESULT RegisterInprocServer(PCWSTR pszModule, const CLSID& clsid, 
     PCWSTR pszFriendlyName, PCWSTR pszThreadModel);
 HRESULT UnregisterInprocServer(const CLSID& clsid);
