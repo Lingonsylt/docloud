@@ -12,7 +12,7 @@
 
 struct sqlite3 *db = NULL;
 
-char *suffix_table[] = { 
+const char *suffix_table[] = { 
 	".doc",
 	".docx",
 	".pdf",

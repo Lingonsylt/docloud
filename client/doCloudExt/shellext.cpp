@@ -1,8 +1,25 @@
 #include <windows.h>
+
+/* strsafe.h-wrapper for mingw, in order to suppress
+ * warnings due to lack of strsafe.lib
+ */
+#ifdef __MINGW32__
+#ifdef __CRT__NO_INLINE
+#undef __CRT__NO_INLINE
+#define DID_UNDEFINE__CRT__NO_INLINE
+#endif
+extern "C" {
+#endif
 #include <strsafe.h>
+#ifdef __MINGW32__
+}
+#ifdef DID_UNDEFINE__CRT__NO_INLINE
+#define __CRT__NO_INLINE
+#endif
+#endif
+
 #define NO_SHLWAPI_STRFCNS
 #include <shlwapi.h>
-#pragma comment(lib, "shlwapi.lib")
 #include "shellext.h"
 #include "resource.h"
 #include "fileinfo.h"
@@ -136,7 +153,7 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 {
 	HRESULT hres;
 	UINT idCmd;
-	wchar_t *text;
+	const wchar_t *text;
 	int ret;
 
 	// If uFlags include CMF_DEFAULTONLY then we should not do anything.
