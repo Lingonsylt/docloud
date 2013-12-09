@@ -53,5 +53,4 @@ class TestOrganization(TestCase):
             self.assertEqual(match[0], match[1])
 
         for match in re.findall(r"(\d)=(\d)", loader.Template(for_template % ("{% load core_tags %}", confirm_delete_template)).render(ctx)):
-            print(match)
             self.assertEqual(match[0], match[1])
