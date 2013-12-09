@@ -36,8 +36,9 @@ def search(request):
                 doc["highlight"] = highlights[doc["id"]]["content_txt"][0]
                 doc['links'] = []
                 for link in doc["links_ss"]:
-                    doc['links'].append({"path": os.path.dirname(link) + ("/" if link.find("/") != -1 else "\\"),
-                                         "filename" : os.path.basename(link)})
+                    separator = "\\" if link.find("\\") != -1 else "/"
+                    doc['links'].append({"path": link[:link.rindex(separator)+1],
+                                         "filename" : link[link.rindex(separator)+1:]})
 
     if delete:
         solr.deleteAll()
