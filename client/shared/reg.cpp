@@ -1,7 +1,25 @@
 #include <windows.h>
 #include <new>
 #include <shlwapi.h>
+
+/* strsafe.h-wrapper for mingw, in order to suppress
+ * warnings due to lack of strsafe.lib
+ */
+#ifdef __MINGW32__
+#ifdef __CRT__NO_INLINE
+#undef __CRT__NO_INLINE
+#define DID_UNDEFINE__CRT__NO_INLINE
+#endif
+extern "C" {
+#endif
 #include <strsafe.h>
+#ifdef __MINGW32__
+}
+#ifdef DID_UNDEFINE__CRT__NO_INLINE
+#define __CRT__NO_INLINE
+#endif
+#endif
+
 #include "reg.h"
 
 HRESULT
