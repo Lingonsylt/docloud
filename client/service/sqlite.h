@@ -21,30 +21,9 @@ if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, N
 #define MIN_PATH_LEN 3
 
 extern struct sqlite3 *sqlite_db;
-
-typedef struct __doCloudFileTag {
-		int id;
-		std::wstring name;
-}doCloudFileTag;
-
-class doCloudFile {
-	public:
-		doCloudFile();
-		~doCloudFile();
-		int getFromId(int searchId);
-		int getFromPath(const wchar_t *path);
-		int clear();
-	
-		int id;
-		std::wstring filename;
-		int blacklisted;
-		time_t updated;
-		time_t uploaded;
-		std::vector<doCloudFileTag*> tags;
-	private:
-		int getFileTags();
-};
-
+const wchar_t *sqlite_get_db_path16();
+const char *sqlite_get_db_path();
+int sqlite_connect();
 
 class sqliteWatcher {
 	public:

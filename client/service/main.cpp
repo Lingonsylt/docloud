@@ -45,7 +45,6 @@ DWORD WINAPI main_loop(LPVOID param)
 	CreateThread(NULL, 0, thread_work, d, 0, &threadid);
 	wprintf(L"Created worker thread %d\n", threadid);
 
-	d->checkDBforUpdates();
 	delete d;
 
 	return 0;
