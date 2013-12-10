@@ -1,7 +1,10 @@
 import json
 import types
 from django.test import RequestFactory
+from django.test.runner import DiscoverRunner
 from core.models import User
+from teamcity import underTeamcity as is_running_under_teamcity
+from teamcity.unittestpy import TeamcityTestRunner
 
 def j(o):
     return json.dumps(o).encode("utf-8")
@@ -19,3 +22,10 @@ class AuthorizedRequestFactory(RequestFactory):
             return self._user
         setattr(r, "loggedin", types.MethodType(loggedin, r))
         return r
+
+class TeamCityTestRunner(DiscoverRunner):
+    def run_suite(self, suite, **kwargs):
+        if is_running_under_teamcity():
+            return TeamcityTestRunner().run(suite)
+        else:
+            return super().run_suite(suite)
