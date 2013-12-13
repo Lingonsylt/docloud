@@ -20,6 +20,15 @@ def update(data, params = None):
                   data=json.dumps(data),
                   headers = {'content-type': 'application/json'}).json()
 
+def delete(id, params = None):
+    if params is None:
+        params = dict()
+    params["wt"] = "json"
+    params["commit"] = "true"
+    return requests.post(settings.SOLR_API_URL + "collection1/update?" + _dict_to_querystring(params),
+                         data=json.dumps([{"delete":{"id":id}}]),
+                         headers = {'content-type': 'application/json'}).json()
+
 def query(q, params):
     if params is None:
         params = dict()

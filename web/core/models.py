@@ -61,6 +61,16 @@ class Installation(models.Model):
     def __str__(self):
         return "%s inst: %s" % (self.user.name, self.uuid)
 
+class FileInfo(models.Model):
+    hash = models.CharField(max_length=128)
+    path = models.CharField(max_length=1024)
+    tags = models.ManyToManyField(Tag)
+    installation = models.ForeignKey(Installation)
+    indexed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return "fi(%s, %s, %s)" % (self.hash, self.path, self.installation)
+
 #class UUIDLink(models.Model):
 #    uuid = models.CharField(primary_key=True, max_length=32, default=lambda: uuid.uuid1().hex)
 #    data = models.TextField()

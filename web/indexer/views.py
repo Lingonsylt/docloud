@@ -1,9 +1,13 @@
+from functools import reduce
 import json
 import os
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from core.models import FileInfo, Tag
 from web import solr
 import logging
 logger = logging.getLogger("django.request")
@@ -13,53 +17,70 @@ logger = logging.getLogger("django.request")
 def index_query(request):
     json_request = json.loads(request.body.decode("UTF-8"))
     result = {"success":True, "results" :[]}
-    allowed_tag_ids = [tag.id for tag in request.loggedin().tags.all()]
     for file_index_request in json_request:
-        for tag_id in file_index_request["tags"]:
-            if tag_id not in allowed_tag_ids:
-                logger.info("%s sent disallowed tagid: %s, skipping file: %s (allowed: %s)" % (request.loggedin(), tag_id, file_index_request, allowed_tag_ids))
-                continue
-        query_response = solr.get(file_index_request["hash"], {"fl":["links_ss", "parsed_b", "tags_is"]})
+        tags = Tag.objects.filter(users__id=request.loggedin().id).\
+            filter(reduce(lambda accum, tag_id: accum | Q(pk = int(tag_id)), file_index_request["tags"], Q()))
+
+        with transaction.atomic():
+            file_info, created = FileInfo.objects.get_or_create(hash=file_index_request["hash"],
+                                               installation=request.loggedin().active_installation,
+                                               path=file_index_request["path"])
+
+            if created or list(file_info.tags.all()) != list(tags):
+                file_info.tags = tags
+                file_info.save()
+                _update_solr(file_index_request["hash"], request.loggedin())
+
+        query_response = solr.get(file_index_request["hash"], {"fl":["parsed_b"]})
         doc = query_response.get("doc", None)
-        if doc is None:
-            request_data = [{"id":file_index_request["hash"],
-                             "links_ss":[file_index_request["path"]],
-                             "tags_is":file_index_request["tags"]}]
-            create_response = solr.update(request_data)
-            if create_response["responseHeader"]["status"] != 0:
-                logger.warning("error when creating document (%s, %s): %s" % (request.loggedin(), file_index_request, create_response))
-                logger.debug("create request data: %s" % request_data)
-                result["success"] = False
-                break
+        index = True
+        if doc is not None:
+            index = not doc.get("parsed_b", False)
 
-            result["results"].append({"hash": file_index_request["hash"],
-                            "index": True})
-        else:
-            request_documents = []
-            if file_index_request["path"] not in doc["links_ss"]:
-                request_documents.append({"id":file_index_request["hash"], "links_ss": {"add": file_index_request["path"]}})
-
-            for tag_id in file_index_request["tags"]:
-                if "tags_is" not in doc or tag_id not in doc["tags_is"]:
-                    request_documents.append({"id": file_index_request["hash"], "tags_is": {"add": tag_id}})
-
-            if request_documents:
-                logger.info("updating: %s" % request_documents)
-                update_response = solr.update(request_documents)
-                if update_response["responseHeader"]["status"] != 0:
-                    logger.warning("error when updating document (%s, %s): %s" % (request.loggedin(), file_index_request, update_response))
-                    logger.debug("update request data: %s" % request_documents)
-                    result["success"] = False
-                    break
-
-            result["results"].append({"hash": file_index_request["hash"],
-                            "index": not doc.get("parsed_b", False)})
+        result["results"].append({"hash": file_index_request["hash"],
+                        "index": index})
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 @csrf_exempt
+@login_required
+def index_delete(request):
+    result = {"success":True, "results" :[]}
+    json_request = json.loads(request.body.decode("UTF-8"))
+    for file_delete_request in json_request:
+        FileInfo.objects.filter(hash=file_delete_request["hash"],
+                        installation=request.loggedin().active_installation,
+                        path=file_delete_request["path"]).delete()
+        _update_solr(file_delete_request["hash"], request.loggedin())
+        result["results"].append({"hash":file_delete_request["hash"], "success":True})
+    return HttpResponse(json.dumps(result), content_type="application/json")
+
+def _update_solr(hash_, user):
+    paths = []
+    tags = []
+    for file_info in FileInfo.objects.filter(hash=hash_):
+        if file_info.path not in paths:
+            paths.append(file_info.path)
+        for tag in file_info.tags.all():
+            if tag.id not in tags:
+                tags.append(tag.id)
+
+    if paths and tags:
+        request_data = [{"id":hash_,
+                         "links_ss":{"set": paths},
+                         "tags_is":{"set": tags}}]
+        response = solr.update(request_data)
+        if response["responseHeader"]["status"] != 0:
+            logger.warning("error when creating document (%s, %s): %s" % (user, hash_, response))
+            logger.debug("create request data: %s" % request_data)
+    else:
+        response = solr.delete(hash_)
+        if response["responseHeader"]["status"] != 0:
+            logger.warning("error when deleting document (%s, %s): %s" % (user, hash_, response))
+
+@csrf_exempt
+@login_required
 def index_update(request):
     metadata = json.loads(request.POST.get("metadata"))
-    current_doc = solr.get(metadata["hash"], {"fl":["links_ss", "tags_is"]})["doc"]
 
     with open(os.path.join(settings.DATA_STORAGE_DIR, metadata["hash"]), "wb") as f:
         f.write(request.FILES["file"].read())
@@ -68,10 +89,10 @@ def index_update(request):
     extract_result = solr.extract({"literal.parsed_b": "true",
                                    "literal.id": metadata["hash"],
                                    "uprefix": "attr_",
-                                   "literal.links_ss": current_doc["links_ss"],
-                                   "literal.tags_is": current_doc["tags_is"],
                                    "fmap.content": "content_txt"},
                                 request.FILES["file"])
+
+    _update_solr(metadata["hash"], request.loggedin())
 
     result = {"success": extract_result["responseHeader"]["status"] == 0}
     return HttpResponse(json.dumps(result), content_type="application/json")
