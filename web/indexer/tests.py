@@ -1,11 +1,9 @@
-from io import StringIO
-import io
 import json
 import tempfile
-from unittest import skip
 from django.test import TestCase
 import mock
 from core.models import FileInfo
+import indexer
 from indexer.views import index_query, index_delete, index_update
 from web.utils import AuthorizedRequestFactory, j, jd
 
@@ -115,6 +113,7 @@ class TestQuery(TestCase):
         self.assertTrue(jd(response.content)["success"])
 
     @mock.patch("indexer.views.solr", autospec=True)
+    @mock.patch("indexer.views.open", mock.mock_open(), create=True)
     def test_index(self, solr_mock):
         solr_mock.extract.return_value = {"responseHeader":{"status":0}}
         solr_mock.update.return_value = {"responseHeader":{"status":0}}
@@ -130,6 +129,7 @@ class TestQuery(TestCase):
         fi.save()
 
         response = index_update(request)
+        self.assertTrue(indexer.views.open().write.called)
         solr_mock.extract.assert_called_once_with({"literal.parsed_b": "true",
                                                    "literal.id": "abc",
                                                    "uprefix": "attr_",
