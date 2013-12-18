@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <direct.h>
 #include <getopt.h>
+#include <stdio.h>
 #include "dirwatcher.h"
 #include "service.h"
 #include "sqlite.h"
