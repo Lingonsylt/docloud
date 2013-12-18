@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <stdio.h>
 #include "sqlite.h"
 #include "docloudfile.h"
 #include "reg.h"
