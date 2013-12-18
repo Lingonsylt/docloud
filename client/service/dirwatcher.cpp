@@ -1,6 +1,5 @@
 #include <windows.h>
 #include <winbase.h>
-#include <synchapi.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <tchar.h>
@@ -257,7 +256,7 @@ dirWatcher::work()
 	OVERLAPPED *overlapped;
 
 	for (;;) {
-		auto ret = GetQueuedCompletionStatus(updatePort, &action, &ptr, &overlapped, INFINITE);
+		HRESULT ret = GetQueuedCompletionStatus(updatePort, &action, &ptr, &overlapped, INFINITE);
 		if (ret == false) {
 			debug_windows(L"GetQueuedCompletionStatus():%s\n");
 			if (overlapped == NULL)

@@ -172,8 +172,11 @@ sqliteWatcher::watch()
 
 				dc_file->getFromId(sqlite3_column_int(stmt, 0));
 				wprintf(L"File %S [%d] [", dc_file->filename.c_str(), dc_file->id);
-				for (auto it : dc_file->tags) {
-					wprintf(L"%d:%S,", it->id, it->name.c_str());
+				
+				std::vector<doCloudFileTag*>::iterator it;
+				for (it = dc_file->tags.begin(); it != dc_file->tags.end(); it ++) {
+//				for (auto it : dc_file->tags) {
+					wprintf(L"%d:%S,", (*it)->id, (*it)->name.c_str());
 				}
 				wprintf(L"]\n");
 			}
