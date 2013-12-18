@@ -6,7 +6,7 @@ LDFLAGS+=-shared -L../shared/sqlite3
 LIBS+=-lshlwapi -lshell32 -luuid -lole32 -lgdi32 -lsqlite3
 OBJS=dllmain.o shellext.o resource.o fileinfo.o docloudext.def ../shared/reg.o
 
-WINDRES:=$(CROSS_COMPILE)windres
+RESCOMP?=$(CROSS_COMPILE)windres
 WINDRES_CXX=$(CXX)
 WINDRES_FLAGS=--preprocessor="$(WINDRES_CXX) -E -xc"
 
@@ -15,7 +15,7 @@ WINDRES_FLAGS=--preprocessor="$(WINDRES_CXX) -E -xc"
 all: docloudext.dll
 
 resource.o: doCloudExt.rc
-	$(WINDRES) $(WINDRES_FLAGS) --input-format=rc --output-format=coff -i $? -o $@
+	$(RESCOMP) $(WINDRES_FLAGS) --input-format=rc --output-format=coff -i $? -o $@
 
 fileinfo.o: fileinfo_sqlite.cpp
 	$(CXX) -o $@ -c $^ $(CXXFLAGS)
