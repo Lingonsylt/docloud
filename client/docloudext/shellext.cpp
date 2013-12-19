@@ -1,4 +1,6 @@
 #include <windows.h>
+#include "docloudfile.h"
+#include "debug.h"
 
 /* strsafe.h-wrapper for mingw, in order to suppress
  * warnings due to lack of strsafe.lib
@@ -31,9 +33,6 @@ FORMATETC fmte = {CF_HDROP, (DVTARGETDEVICE FAR *)NULL, DVASPECT_CONTENT, -1, TY
 
 #define IDCMD_ADD		0
 #define IDCMD_REMOVE		1
-
-/* Used for debugging */
-#define log(str, ...)
 
 /* Do not check files that do not have a complete path,
  * e.g. c:\a is ok, but not c:
@@ -174,36 +173,47 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 	int found = 0;
 	int blacklisted = 0;
 
-	v_files.resize(nFiles);
+	std::vector<doCloudFile *>::iterator it;
+	for (it = v_files.begin(); it != v_files.end(); it ++)
+		delete (*it);
+
+	v_files.clear();
 	for (int i = 0; i < nFiles; i++) {
+		doCloudFile *dcfile;
 		wchar_t filename[300];
-		char filename_utf8[300];
-		struct file_info file;
 
+		ret = DragQueryFile((HDROP)medium.hGlobal, i, NULL, 0);
+		log("strlen: %d\n", ret);
+		ret = DragQueryFile((HDROP)medium.hGlobal, i, filename, ARRAYSIZE(filename));
 
-		DragQueryFile((HDROP)medium.hGlobal, i, filename, ARRAYSIZE(filename));
-
-		/* FIXME! - check return value? */
-		WideCharToMultiByte(CP_UTF8, 0, filename, -1,
-		    filename_utf8, sizeof(filename_utf8), NULL, NULL);
-
-		if (strlen(filename_utf8) < MIN_PATH_LEN) {
-			v_files[i].filename = NULL;
+		if (!ret) {
+			log("Could not get file for index %d\n", i);
 			continue;
 		}
 
-		v_files[i].id = -1;
-		v_files[i].filename = strdup(filename_utf8);
-		v_files[i].parent_flags = 0;
-		v_files[i].blacklisted = 0;
-
-		ret = docloud_get_file_info(&(v_files[i]));
-		log("docloud_get_file_info(%d: %s): %d\n", v_files[i].id, v_files[i].filename, ret);
-		if (ret == DC_OK) {
-			found++;
-			if (v_files[i].blacklisted) blacklisted ++;
-			break;
+		dcfile = new doCloudFile;
+		if ((ret = dcfile->getFromPath(filename)) == -1) {
+			log("doCloudFile.getFromPath(%s): %d\n", filename, ret);
+			delete dcfile;
+			continue;
 		}
+
+		if (dcfile->filename.length()) {
+			logw(L"Found file [%ld] %s\n", dcfile->id, dcfile->filename.c_str());
+		} else {
+			logw(L"Could not find file for path %s\n", filename);
+		}
+		log("Blacklisted: %ld\n", dcfile->blacklisted);
+
+		if (dcfile->id) found++;
+		if (dcfile->blacklisted) blacklisted ++;
+
+		/* Add a pointer to the acutal file/folder the user clicked on */
+		if (dcfile->matches_parent) {
+			dcfile->clear();
+			dcfile->filename = filename;
+		}
+		v_files.push_back(dcfile);
 	}
 
 	if (found && !blacklisted) {
@@ -258,18 +268,21 @@ STDMETHODIMP ShellExt::InvokeCommand(LPCMINVOKECOMMANDINFO pici)
 	UINT cmd;
 	cmd = LOWORD(pici->lpVerb);
 
-	for (int i = 0; i < nFiles; i++) {
-		if (v_files[i].filename == NULL)
+	log("inovkeCommand()\n", 1);
+	std::vector<doCloudFile*>::iterator it;
+	for (it = v_files.begin(); it != v_files.end(); it ++) {
+		doCloudFile *dcfile = (*it);
+
+		if (dcfile->filename.length() == 0)
 			continue;
 		if (cmd == IDCMD_ADD) {
-			if (v_files[i].id) v_files[i].blacklisted = 0;
-			ret = docloud_add_file(&v_files[i]);
-			log("add file %s: %d\n", v_files[i].filename, ret);
+			dcfile->blacklisted = 0;
+			log("add file %s: %d\n", dcfile->filename.c_str());
 		} else if (cmd == IDCMD_REMOVE) {
-			v_files[i].blacklisted = 1;
-			ret = docloud_add_file(&v_files[i]);
-			log("blacklist file %s: %d\n", v_files[i].filename, ret);
+			dcfile->blacklisted = 1;
+			log("blacklist file %s\n", (*it)->filename.c_str());
 		}
+		dcfile->save();
 	}
 	//	OnVerbDisplayFileName(pici->hwnd);
 	return S_OK;
