@@ -18,7 +18,6 @@ typedef struct t_directory {
 			if (buffer)
 				delete buffer;
 		}
-
 }directory;
 
 
@@ -29,6 +28,8 @@ class dirWatcher {
 		int init();
 		int addDirectory(const wchar_t *dir);
 		int remDirectory(const wchar_t *dir);
+		int loadDirList();
+
 		int watch();
 		int work();
 	private:

@@ -5,6 +5,7 @@
 #include <tchar.h>
 #include <map>
 #include <string>
+#include "sqlite.h"
 #include "dirwatcher.h"
 
 /* strsafe.h-wrapper for mingw, in order to suppress
@@ -24,18 +25,6 @@ extern "C" {
 #define __CRT__NO_INLINE
 #endif
 #endif
-
-#define debug_windows(fmt) {\
-		LPTSTR __dbg_win_ptr, __dbg_win_ptr_2; \
-		if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, \
-					GetLastError(), 0, (LPTSTR)&__dbg_win_ptr, 0, NULL) != 0) { \
-			for(__dbg_win_ptr_2 = __dbg_win_ptr;isprint(*__dbg_win_ptr_2);__dbg_win_ptr_2++); \
-			*__dbg_win_ptr_2 = '\0'; \
-			wprintf(fmt, __dbg_win_ptr); \
-			LocalFree(__dbg_win_ptr);	\
-		}else \
-			wprintf(fmt, "(Unknown error)"); \
-		}
 
 #define BUFFER_SIZE 5
 
@@ -85,7 +74,7 @@ int dirWatcher::addDirectory(const wchar_t *path)
 
 
 	/* First, check if we're watching a subdirectory to this directory */
-	wprintf(L"Tryint to add path %s\n", path);
+	wprintf(L"Trying to add path %s\n", path);
 	wstr = path;
 	AcquireSRWLockShared(&dirLock);
 	std::map<unsigned long long, directory *>::iterator m;
@@ -174,6 +163,47 @@ int dirWatcher::remDirectory(const wchar_t *path)
 		}
 	}
 	ReleaseSRWLockExclusive(&dirLock);
+	return 0;
+}
+
+/*
+ * loadDirList()
+ *
+ * Read list of directories to listen to from the database
+ */
+int dirWatcher::loadDirList()
+{
+	struct sqlite3_stmt *stmt;
+	const wchar_t *filename;
+	std::wstring dirpath;
+	int rv;
+
+	if (sqlite_connect() == -1)
+		return -1;
+
+	rv = sqlite3_prepare(sqlite_db,
+	    "SELECT filename FROM docloud_files WHERE blacklisted = 0",
+	    -1, &stmt, NULL);
+	if (rv == SQLITE_ERROR) {
+		wprintf(L"sqlite3_prepare(): %s\n",
+		    sqlite3_errmsg(sqlite_db));
+		sqlite3_finalize(stmt);
+		return -1;
+	}
+
+	while ((rv = sqlite3_step(stmt)) == SQLITE_ROW) {
+		filename = (const wchar_t*)sqlite3_column_text16(stmt, 0);
+
+		dirpath = filename;
+		if (PathIsDirectory(filename)) {
+			addDirectory(filename);
+		} else {
+			dirpath.erase(dirpath.find_last_of(L"\\/"));
+			addDirectory(dirpath.c_str());
+		}
+	}
+
+	sqlite3_finalize(stmt);
 	return 0;
 }
 
