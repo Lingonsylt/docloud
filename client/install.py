@@ -28,7 +28,7 @@ def package(bits="x64"):
     print("Package created at: %s" % pkg_path)
     return pkg_path
 
-def install(pkg_path, reinstall=False, kill_explorer=True):
+def install(pkg_path, reinstall=False, kill_explorer=False):
     import winreg
     print("Installing package from: %s" % pkg_path)
     install_path = os.environ.get("INSTALL_DIR", join(os.path.dirname(__file__), "install"))
@@ -74,10 +74,31 @@ def install(pkg_path, reinstall=False, kill_explorer=True):
     print("Starting service:")
     os.system(join(install_path, "docloud-svc.exe"))
 
+def uninstall():
+    print("Uninstalling docloud")
+    import winreg
+    docloud_key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, "Software\\Docloud\\Docloud")
+    try:
+        db_name, no = winreg.QueryValueEx(docloud_key, "database")
+        try:
+            print("Deleting database %s" % db_name)
+            os.remove(db_name)
+        except FileNotFoundError:
+            pass
+    except FileNotFoundError:
+        pass
+    winreg.DeleteKey(docloud_key, "")
+
 args = sys.argv[1:]
-if "package" in args or "install" in args:
+if "uninstall" in args:
+    uninstall()
+if "package" in args:
     pkg_path = package()
     if "install" in args:
-        install(pkg_path,reinstall=True,kill_explorer=True)
-else:
-    print("Options are: package, install")
+        install(pkg_path,
+                reinstall="--reinstall" in args or "-r" in args,
+                kill_explorer="--killexplorer" in args or "-k" in args)
+elif "install" in args:
+    install(".")
+elif "uninstall" not in args:
+    print("Options are: package, install, uninstall, --killexplorer (-k), --reinstall (-r)")
