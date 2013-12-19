@@ -9,12 +9,20 @@
 DWORD WINAPI  (__stdcall *service_exec_function)(LPVOID) = NULL;
 extern int service_is_running;
 
-DWORD WINAPI thread_watch(LPVOID param)
+DWORD WINAPI thread_dirwatch(LPVOID param)
 {
 	dirWatcher *d;
 	d = (dirWatcher *)param;
 	d->watch();
 }
+
+DWORD WINAPI thread_sqlitewatch(LPVOID param)
+{
+	sqliteWatcher *sw;
+	sw = (sqliteWatcher *)param;
+	sw->watch();
+}
+
 
 DWORD WINAPI thread_work(LPVOID param)
 {
@@ -35,17 +43,21 @@ DWORD WINAPI main_loop(LPVOID param)
 	sqliteWatcher *sqlw = new sqliteWatcher();
 	unsigned long threadid;
 
-	sqlw->watch();
+	sqlw->setDirWatcher(d);
 
-	return 0;
-	d->addDirectory(L"h:\\temp\\ab\\");
-	d->addDirectory(L"h:\\temp");
-	CreateThread(NULL, 0, thread_watch, d, 0, &threadid);
-	wprintf(L"Created thread %d\n", threadid);
+	CreateThread(NULL, 0, thread_sqlitewatch, sqlw, 0, &threadid);
+	wprintf(L"Created thread for sqlitewatcher: %d\n", threadid);
+
+	/* Read list of directories from DB */
+	d->loadDirList();
+
+	CreateThread(NULL, 0, thread_dirwatch, d, 0, &threadid);
+	wprintf(L"Created thread for dirwatcher %d\n", threadid);
 
 	CreateThread(NULL, 0, thread_work, d, 0, &threadid);
 	wprintf(L"Created worker thread %d\n", threadid);
 
+	Sleep(100000);
 	delete d;
 
 	return 0;
