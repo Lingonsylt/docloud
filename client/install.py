@@ -3,9 +3,11 @@ import sqlite3
 import winreg
 from os.path import join
 from shutil import copy, rmtree, copytree
+import sys
 
 def package(bits="x64"):
     pkg_path = join(os.path.dirname(__file__), "pkg")
+    print("Creating package at: %s" % pkg_path)
     service_path = join(os.path.dirname(__file__), "service")
     shared_path = join(os.path.dirname(__file__), "shared")
     docloudext_path = join(os.path.dirname(__file__), "docloudext")
@@ -22,9 +24,11 @@ def package(bits="x64"):
     copy(join(docloudext_path, "docloudext.dll"), pkg_path)
     copy(join(service_path, "docloud-svc.exe"), pkg_path)
 
+    print("Package created at: %s" % pkg_path)
     return pkg_path
 
 def install(pkg_path, reinstall=False, kill_explorer=True):
+    print("Installing package from: %s" % pkg_path)
     install_path = os.environ.get("INSTALL_DIR", join(os.path.dirname(__file__), "install"))
     if reinstall:
         try:
@@ -68,5 +72,10 @@ def install(pkg_path, reinstall=False, kill_explorer=True):
     print("Starting service:")
     os.system(join(install_path, "docloud-svc.exe"))
 
-pkg_path = package()
-install(pkg_path,reinstall=True,kill_explorer=True)
+args = sys.argv[1:]
+if "package" in args or "install" in args:
+    pkg_path = package()
+    if "install" in args:
+        install(pkg_path,reinstall=True,kill_explorer=True)
+else:
+    print("Options are: package, install")
