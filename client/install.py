@@ -1,6 +1,5 @@
 import os
 import sqlite3
-import winreg
 from os.path import join
 from shutil import copy, rmtree, copytree
 import sys
@@ -28,6 +27,7 @@ def package(bits="x64"):
     return pkg_path
 
 def install(pkg_path, reinstall=False, kill_explorer=True):
+    import winreg
     print("Installing package from: %s" % pkg_path)
     install_path = os.environ.get("INSTALL_DIR", join(os.path.dirname(__file__), "install"))
     if reinstall:
