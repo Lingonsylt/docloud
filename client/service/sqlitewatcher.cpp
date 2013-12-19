@@ -5,10 +5,6 @@
 #include "docloudfile.h"
 #include "reg.h"
 
-sqliteWatcher::sqliteWatcher()
-{
-}
-
 sqliteWatcher::~sqliteWatcher()
 {
 }
@@ -108,7 +104,23 @@ sqliteWatcher::watch()
 
 				dc_file->getFromId(sqlite3_column_int(stmt, 0));
 				wprintf(L"File %s [%d] [", dc_file->filename.c_str(), dc_file->id);
-				
+
+				if (PathIsDirectory(dc_file->filename.c_str())) {
+					/* FIXME - handle the case where we have added a file inside
+					 * this directory and then blacklist it -
+					 * we should still be listening for changes in the directory
+					 * but only act when the added file changes
+					 */
+					if (dc_file->blacklisted)
+						dirwatcher->remDirectory(dc_file->filename.c_str());
+					else if (dc_file->uploaded == 0) /* We havent seen this before */
+						dirwatcher->addDirectory(dc_file->filename.c_str());
+				} else if (! dc_file->blacklisted) {
+					std::wstring dirpath = dc_file->filename;
+					dirpath.erase(dirpath.find_last_of(L"\\/"));
+					dirwatcher->addDirectory(dc_file->filename.c_str());
+				}
+
 				std::vector<doCloudFileTag*>::iterator it;
 				for (it = dc_file->tags.begin(); it != dc_file->tags.end(); it ++) {
 //				for (auto it : dc_file->tags) {

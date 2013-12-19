@@ -4,6 +4,7 @@
 #include <shlwapi.h>
 #include <vector>
 #include <string>
+#include "dirwatcher.h"
 
 #define debug_windows(fmt) {\
 LPTSTR __dbg_win_ptr, __dbg_win_ptr_2; \
@@ -20,11 +21,14 @@ if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, N
 #define MIN_PATH_LEN 3
 class sqliteWatcher {
 	public:
-		sqliteWatcher();
+		sqliteWatcher():dirwatcher(NULL) {};
+		sqliteWatcher(dirWatcher *dw):dirwatcher(dw) { }
 		~sqliteWatcher();
 		
 		int watch();
+		int setDirWatcher(dirWatcher *dw) { dirwatcher = dw; };
 	private:
+		dirWatcher *dirwatcher;
 };
 
 #endif /* end of include guard: SQLITEWATCHER_H */
