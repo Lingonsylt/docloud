@@ -3,6 +3,8 @@ import sqlite3
 from os.path import join
 from shutil import copy, rmtree, copytree
 import sys
+import time
+
 if sys.version_info < (3, 3, 0):
     FileNotFoundError = OSError
 
@@ -66,6 +68,7 @@ def install(pkg_path):
     with open(schema_path) as schema_f:
         conn.executescript(schema_f.read())
 
+    print("Loading dll: %s" % join(install_path, "docloudext.dll"))
     os.system("regsvr32 %s" % join(install_path, "docloudext.dll"))
 
     print("Starting service:")
@@ -100,9 +103,11 @@ def uninstall(new_path=None):
             print("Unloading dll %s" % docloudext_dll)
             os.system("regsvr32 /u %s" % docloudext_dll)
         os.system("taskkill /f /im explorer.exe")
+        time.sleep(0.5)
         if os.path.exists(install_path) and os.path.isdir(install_path):
             rmtree(install_path)
-        os.system("explorer.exe")
+        os.system("explorer")
+        time.sleep(0.5)
     else:
         print("No installation found!")
     if new_path is not None:
