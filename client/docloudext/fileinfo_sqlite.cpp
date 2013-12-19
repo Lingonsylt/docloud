@@ -2,15 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
-#include <sqlite3.h>
+#include <time.h>
+#include "sqlite.h"
 #include "fileinfo.h"
 
 /* Used for debugging */
 #define log(str, ...)
-
-#define MIN_PATH_LEN 4
-
-struct sqlite3 *db = NULL;
 
 const char *suffix_table[] = { 
 	".doc",
@@ -43,10 +40,10 @@ int docloud_check_subdirs(struct file_info *file) {
 	query += ") ORDER BY filename DESC LIMIT 1";
 
 	log("%s\n", query.c_str());
-	ret = sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, NULL);
+	ret = sqlite3_prepare_v2(sqlite_db, query.c_str(), -1, &stmt, NULL);
 	if (ret != SQLITE_OK) {
 		log("Cannot prepare statement %s: %s\n",
-		    query.c_str(), sqlite3_errmsg(db));
+		    query.c_str(), sqlite3_errmsg(sqlite_db));
 		return DC_ERROR;
 	}
 
@@ -72,7 +69,7 @@ int docloud_check_subdirs(struct file_info *file) {
 		file->parent_flags = DC_PARENT_NONE;
 	} else {
 		log("Error in %d sqlite3_step(): %s\n", __LINE__,
-		    sqlite3_errmsg(db));
+		    sqlite3_errmsg(sqlite_db));
 		sqlite3_finalize(stmt);
 		return DC_ERROR;
 	}
@@ -90,39 +87,26 @@ int docloud_get_file_info(struct file_info *file)
 	printf("file: %p\n", file);
 	printf("file->filename: %p\n", file->filename);
 	filename = file->filename;
-	if (db == NULL) {
-		/*
-		ret = sqlite3_open_v2("c:\\devel\\docloud\\client\\doCloudExt\\test.db", &db,
-		    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
-		    */
-		ret = sqlite3_open("c:\\devel\\docloud\\client\\doCloudExt\\test.db", &db);
+	if (sqlite_connect() == -1)
+		return DC_ERROR;
 
-		if (ret != SQLITE_OK) {
-			log("Cannot open database: %s\n",
-			    sqlite3_errmsg(db));
-			sqlite3_close(db);
-			db = NULL;
-			return DC_ERROR;
-		}
-	}
-
-	ret = sqlite3_prepare_v2(db,
+	ret = sqlite3_prepare_v2(sqlite_db,
 	    "SELECT id, blacklisted FROM docloud_files WHERE filename = ?",
 	    -1, &stmt, NULL);
 	if (ret != SQLITE_OK) {
 		log("Cannot prepare statement: %d: %s\n",
-		    ret, sqlite3_errmsg(db));
-		sqlite3_close(db);
-		db = NULL;
+		    ret, sqlite3_errmsg(sqlite_db));
+		sqlite3_close(sqlite_db);
+		sqlite_db = NULL;
 		return DC_ERROR;
 	}
 
 	ret = sqlite3_bind_text(stmt, 1, filename, -1, NULL);
 	if (ret != SQLITE_OK) {
 		log("Cannot bind argument: %s\n",
-		    sqlite3_errmsg(db));
+		    sqlite3_errmsg(sqlite_db));
 		sqlite3_finalize(stmt);
-		sqlite3_close(db);
+		sqlite3_close(sqlite_db);
 		return DC_ERROR;
 	}
 
@@ -139,7 +123,7 @@ int docloud_get_file_info(struct file_info *file)
 		}
 	} else {
 		log("Error in %d sqlite3_step(): %s\n", __LINE__,
-		    sqlite3_errmsg(db));
+		    sqlite3_errmsg(sqlite_db));
 		sqlite3_finalize(stmt);
 		return DC_ERROR;
 	}
@@ -152,44 +136,36 @@ int docloud_add_file(struct file_info *file)
 {
 	struct sqlite3_stmt *stmt;
 	int ret;
+	time_t updated;
 
-	if (db == NULL) {
-		/* Try opening database without create-flag */
-		ret = sqlite3_open_v2("c:\\devel\\docloud\\client\\doCloudExt\\test.db", &db,
-		    SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+	if (sqlite_connect() == -1)
+		return DC_ERROR;
 
-		if (ret != SQLITE_OK) {
-			log("Cannot open database: %s\n",
-			    sqlite3_errmsg(db));
-			sqlite3_close(db);
-			db = NULL;
-			return DC_ERROR;
-		}
-	}
-
+	updated = time(NULL);
 	if (file->id == -1) {
-		ret = sqlite3_prepare_v2(db,
-		    "INSERT INTO docloud_files (filename, blacklisted) VALUES (?, ?)",
+		ret = sqlite3_prepare_v2(sqlite_db,
+		    "INSERT INTO docloud_files (filename, blacklisted, uploaded, updated) VALUES (?, ?, 0, ?)",
 		    -1, &stmt, NULL);
 	} else {
-		ret = sqlite3_prepare_v2(db,
-		    "UPDATE docloud_files SET filename = ?, blacklisted = ? WHERE id = ?",
+		ret = sqlite3_prepare_v2(sqlite_db,
+		    "UPDATE docloud_files SET filename = ?, blacklisted = ?, updated = ? WHERE id = ?",
 		    -1, &stmt, NULL);
 		log(
-		    "UPDATE docloud_files SET filename = '%s', blacklisted = %d WHERE id = %d",
-		    file->filename, file->blacklisted, file->id);
-		ret += sqlite3_bind_int(stmt, 3, file->id);
+		    "UPDATE docloud_files SET filename = '%s', blacklisted = %d, updated = %d WHERE id = %d",
+		    file->filename, file->blacklisted, updated, file->id);
+		ret += sqlite3_bind_int(stmt, 4, file->id);
 	}
 	ret += sqlite3_bind_text(stmt, 1, file->filename, -1, NULL);
 	ret += sqlite3_bind_int(stmt, 2, file->blacklisted);
+	ret += sqlite3_bind_int(stmt, 3, updated);
 
 	if (ret != SQLITE_OK) {
 		log("Could not prepare statement: %s\n",
-		    sqlite3_errmsg(db));
+		    sqlite3_errmsg(sqlite_db));
 		if (stmt)
 			sqlite3_finalize(stmt);
-		sqlite3_close(db);
-		db = NULL;
+		sqlite3_close(sqlite_db);
+		sqlite_db = NULL;
 		return DC_ERROR;
 	}
 
@@ -197,10 +173,10 @@ int docloud_add_file(struct file_info *file)
 	sqlite3_finalize(stmt);
 	if (ret == SQLITE_DONE) {
 		if (file->id == -1)
-			file->id = sqlite3_last_insert_rowid(db);
+			file->id = sqlite3_last_insert_rowid(sqlite_db);
 		return DC_OK;
 	} else {
-		log("sqlite3_step: %s\n", sqlite3_errmsg(db));
+		log("sqlite3_step: %s\n", sqlite3_errmsg(sqlite_db));
 	}
 	return DC_ERROR;
 }
@@ -241,9 +217,9 @@ int docloud_get_tree_info(char *filename, struct file_info *file)
 int docloud_close_db()
 {
 	int ret = 0;
-	if (db != NULL) {
-		ret = sqlite3_close(db);
-		db = NULL;
+	if (sqlite_db != NULL) {
+		ret = sqlite3_close(sqlite_db);
+		sqlite_db = NULL;
 	}
 	return ret;
 }

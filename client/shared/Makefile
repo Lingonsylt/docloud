@@ -1,7 +1,7 @@
 CFLAGS+=-DUNICODE -D_UNICODE
-CXXFLAGS+=-DUNICODE -D_UNICODE
+CXXFLAGS+=-DUNICODE -D_UNICODE -Isqlite3
 
-OBJECTS=reg.o
+OBJECTS=reg.o sqlite.o
 
 all: $(OBJECTS)
 	-cd sqlite3 && make all

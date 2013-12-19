@@ -3,8 +3,8 @@
 #include <getopt.h>
 #include <stdio.h>
 #include "dirwatcher.h"
+#include "sqlitewatcher.h"
 #include "service.h"
-#include "sqlite.h"
 
 DWORD WINAPI  (__stdcall *service_exec_function)(LPVOID) = NULL;
 extern int service_is_running;
