@@ -23,6 +23,9 @@ sqliteWatcher::watch()
 	const wchar_t *db_path;
 	int rv;
 	
+	if (sqlite_connect() == -1)
+		return -1;
+
 	db_path = sqlite_get_db_path16();
 	if (!GetFileAttributesEx(db_path,
 		GetFileExInfoStandard,
@@ -49,7 +52,7 @@ sqliteWatcher::watch()
 	} else if(hnotify == NULL) {
 		printf("ERROR: Unexpected NULL from FindFirstChangeNotification.\n");
 	} else {
-		wprintf(L"Added %S to list\n", path);
+		wprintf(L"Added %s to list\n", path);
 	}
 
 	printf("\nWaiting for notification...");
@@ -72,7 +75,6 @@ sqliteWatcher::watch()
 
 		if (dwWaitStatus != WAIT_OBJECT_0) continue;
 
-	
 		if (!GetFileAttributesEx(db_path,
 			GetFileExInfoStandard,
 			&fileInfo)) {
@@ -93,7 +95,7 @@ sqliteWatcher::watch()
 			Sleep(100);
 			/* Get list of updated files */
 			rv = sqlite3_prepare(sqlite_db,
-			    "SELECT id FROM docloud_files WHERE updated > uploaded",
+			    "SELECT id FROM docloud_files WHERE updated <> uploaded OR uploaded = 0",
 			    -1, &stmt, NULL);
 			if (rv == SQLITE_ERROR) {
 				wprintf(L"sqlite3_prepare(): %s\n",
@@ -105,12 +107,12 @@ sqliteWatcher::watch()
 				dc_file = new doCloudFile;
 
 				dc_file->getFromId(sqlite3_column_int(stmt, 0));
-				wprintf(L"File %S [%d] [", dc_file->filename.c_str(), dc_file->id);
+				wprintf(L"File %s [%d] [", dc_file->filename.c_str(), dc_file->id);
 				
 				std::vector<doCloudFileTag*>::iterator it;
 				for (it = dc_file->tags.begin(); it != dc_file->tags.end(); it ++) {
 //				for (auto it : dc_file->tags) {
-					wprintf(L"%d:%S,", (*it)->id, (*it)->name.c_str());
+					wprintf(L"%d:%s,", (*it)->id, (*it)->name.c_str());
 				}
 				wprintf(L"]\n");
 			}
