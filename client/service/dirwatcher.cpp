@@ -27,6 +27,8 @@ extern "C" {
 #endif
 
 #define BUFFER_SIZE 5
+#define WATCHER_TIMEOUT 1000
+#define WORKER_TIMEOUT INFINITE
 
 dirWatcher::dirWatcher(): hIOCP(NULL), max_key(0)
 {
@@ -215,8 +217,15 @@ dirWatcher::watch()
 	OVERLAPPED *overlappedptr;
 	directory *dir;
 
+	if (hIOCP == NULL)
+		this->init();
+
 	for (;;) {
-		if (!GetQueuedCompletionStatus(hIOCP, &nb, &key, &overlappedptr, INFINITE)) {
+		if (!GetQueuedCompletionStatus(hIOCP, &nb, &key, &overlappedptr, WATCHER_TIMEOUT)) {
+			if (overlappedptr == NULL) {
+				/* timeout */
+				continue;
+			}
 			debug_windows(L"GetQueuedCompletionStatus(): %s\n");
 		}
 
@@ -286,7 +295,7 @@ dirWatcher::work()
 	OVERLAPPED *overlapped;
 
 	for (;;) {
-		HRESULT ret = GetQueuedCompletionStatus(updatePort, &action, &ptr, &overlapped, INFINITE);
+		HRESULT ret = GetQueuedCompletionStatus(updatePort, &action, &ptr, &overlapped, WORKER_TIMEOUT);
 		if (ret == false) {
 			debug_windows(L"GetQueuedCompletionStatus():%s\n");
 			if (overlapped == NULL)
