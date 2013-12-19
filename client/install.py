@@ -3,6 +3,8 @@ import sqlite3
 from os.path import join
 from shutil import copy, rmtree, copytree
 import sys
+if sys.version_info < (3, 3, 0):
+    FileNotFoundError = OSError
 
 def package(bits="x64"):
     pkg_path = join(os.path.dirname(__file__), "pkg")
