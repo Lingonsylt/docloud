@@ -10,6 +10,8 @@ LDFLAGS= -shared -s -Wl,--subsystem,windows,--out-implib,$@.a
 .PHONY: clean
 
 all: sqlite3.dll
+	cp sqlite3.dll ../../service/
+	cp sqlite3.dll ../../docloudext/
 
 sqlite3.dll: sqlite3.o shell.o
 	$(CC) -o $@ $^ $(LDFLAGS)
