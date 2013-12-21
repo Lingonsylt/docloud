@@ -3,6 +3,10 @@
 #include "sqlite.h"
 #include "reg.h"
 
+#ifdef WIN32
+#define swprintf _snwprintf
+#endif
+
 struct sqlite3 *sqlite_db = NULL;
 
 const wchar_t *
