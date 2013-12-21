@@ -35,8 +35,12 @@ def package(bits="x64"):
     copy("install.py", pkg_path)
     copy(join(shared_path, "sqlite3", "sqlite3.dll"), tmppkg_path)
     copy(join(shared_path, "schema.sql"), tmppkg_path)
-    for file in os.listdir(join(shared_path, bits)):
-        copy(join(shared_path, bits, file), tmppkg_path)
+
+    dlls = join(shared_path, bits)
+    if os.path.exists(dlls) and os.path.isdir(dlls):
+        for file in os.listdir():
+            copy(join(shared_path, bits, file), tmppkg_path)
+
     copy(join(docloudext_path, "docloudext.dll"), tmppkg_path)
     copy(join(service_path, "docloud-svc.exe"), tmppkg_path)
     _zipdir(tmppkg_path, os.path.join(pkg_path, "pkg.zip"))
