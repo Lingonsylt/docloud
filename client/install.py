@@ -4,11 +4,15 @@ from os.path import join
 from shutil import copy, rmtree, copytree
 import sys
 import time
+import subprocess
 
 if sys.version_info < (3, 3, 0):
     FileNotFoundError = OSError
 
 script_path = os.path.dirname(os.path.abspath(__file__))
+
+def _spawn(process, *args):
+    subprocess.Popen([process] + list(args))
 
 def _get_pkg_path(default=None):
     args = sys.argv[1:]
@@ -38,7 +42,7 @@ def package(bits="x64"):
 
     dlls = join(shared_path, bits)
     if os.path.exists(dlls) and os.path.isdir(dlls):
-        for file in os.listdir():
+        for file in os.listdir(dlls):
             copy(join(shared_path, bits, file), tmppkg_path)
 
     copy(join(docloudext_path, "docloudext.dll"), tmppkg_path)
@@ -151,6 +155,7 @@ def uninstall(new_path=None):
             print("Unloading dll %s" % docloudext_dll)
             os.system("regsvr32 /s /u %s" % docloudext_dll)
         os.system("taskkill /f /im explorer.exe")
+        os.system("taskkill /f /im doucloud-svc.exe")
         time.sleep(0.5)
 
         if os.path.exists(install_path) and os.path.isdir(install_path):
@@ -159,7 +164,7 @@ def uninstall(new_path=None):
             except OSError as e:
                 print("Error removing files: %s" % e)
                 success = False
-        os.system("explorer")
+        _spawn("explorer")
         time.sleep(0.5)
     else:
         print("No installation found!")
