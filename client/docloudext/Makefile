@@ -2,7 +2,7 @@
 CFLAGS+=-DUNICODE -D_UNICODE
 CXXFLAGS+=-DUNICODE -D_UNICODE -I../shared -I../shared/sqlite3
 # -static-libgcc -static-libstdc++
-LDFLAGS+=-shared -L../shared/sqlite3
+LDFLAGS+=-shared -L../shared/sqlite3 -static-libgcc -static-libstdc++
 LIBS+=-lshlwapi -lshell32 -luuid -lole32 -lgdi32 -lsqlite3
 OBJS=dllmain.o shellext.o resource.o fileinfo.o docloudext.def ../shared/reg.o ../shared/sqlite.o
 

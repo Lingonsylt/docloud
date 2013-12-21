@@ -5,7 +5,7 @@ CFLAGS=-L%rootdir%\lib\win64\debug -I %rootdir%\include\windows\crtl -I %rootdir
        -DSQLITE_ENABLE_FTS3 \
        -DSQLITE_ENABLE_FTS4
 
-LDFLAGS= -shared -s -Wl,--subsystem,windows,--out-implib,$@.a
+LDFLAGS= -shared -s -Wl,--subsystem,windows,--out-implib,$@.a -static-libgcc
 
 .PHONY: clean
 
