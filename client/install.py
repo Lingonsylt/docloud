@@ -20,6 +20,7 @@ def _get_pkg_path(default=None):
 
 def package(bits="x64"):
     pkg_path = _get_pkg_path()
+    tmppkg_path = os.path.join(pkg_path, "tmppkg")
     print("Creating package at: %s" % pkg_path)
     service_path = join(script_path, "service")
     shared_path = join(script_path, "shared")
@@ -30,16 +31,29 @@ def package(bits="x64"):
     except FileNotFoundError:
         pass
     os.mkdir(pkg_path)
+    os.mkdir(tmppkg_path)
     copy("install.py", pkg_path)
-    copy(join(shared_path, "sqlite3", "sqlite3.dll"), pkg_path)
-    copy(join(shared_path, "schema.sql"), pkg_path)
+    copy(join(shared_path, "sqlite3", "sqlite3.dll"), tmppkg_path)
+    copy(join(shared_path, "schema.sql"), tmppkg_path)
     for file in os.listdir(join(shared_path, bits)):
-        copy(join(shared_path, bits, file), pkg_path)
-    copy(join(docloudext_path, "docloudext.dll"), pkg_path)
-    copy(join(service_path, "docloud-svc.exe"), pkg_path)
-
+        copy(join(shared_path, bits, file), tmppkg_path)
+    copy(join(docloudext_path, "docloudext.dll"), tmppkg_path)
+    copy(join(service_path, "docloud-svc.exe"), tmppkg_path)
+    _zipdir(tmppkg_path, os.path.join(pkg_path, "pkg.zip"))
+    rmtree(tmppkg_path)
     print("Package created at: %s" % pkg_path)
     return pkg_path
+
+import zipfile
+def _zipdir(directory, zip_path):
+    with zipfile.ZipFile(zip_path, 'w') as zipf:
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                zipf.write(os.path.join(root, file), file)
+
+def _unzip(zip_path, destination):
+    with zipfile.ZipFile(zip_path, "r") as zipf:
+        zipf.extractall(destination)
 
 def install(pkg_path):
     args = sys.argv[1:]
@@ -63,14 +77,12 @@ def install(pkg_path):
 
     _set_registry_install_path(install_path)
     print("Installing in: %s" % install_path)
-    try:
-        copytree(pkg_path, install_path)
-    except OSError as e:
-        print("Error copying files: %s" % e)
-        print("Install stopped")
-        return
-    db_path = join(install_path, "db.sqlite")
-    schema_path = join(pkg_path, "schema.sql") if os.path.exists(join(pkg_path, "schema.sql")) else join(pkg_path, "shared", "schema.sql")
+    tmppkg_path = os.path.join(pkg_path, "tmppkg")
+    _unzip(os.path.join(pkg_path, "pkg.zip"), tmppkg_path)
+
+    db_path = join(tmppkg_path, "db.sqlite")
+    schema_path = join(tmppkg_path, "schema.sql") \
+        if os.path.exists(join(tmppkg_path, "schema.sql")) else join(tmppkg_path, "shared", "schema.sql")
 
     try:
         conn = sqlite3.connect(db_path)
@@ -85,10 +97,22 @@ def install(pkg_path):
     except Exception as e:
         print("Could not create schema in db: %s" % e)
         print("Install stopped")
+        conn.close()
         return
+    conn.close()
+    try:
+        copytree(tmppkg_path, install_path)
+    except OSError as e:
+        print("Error copying files: %s" % e)
+        print("Install stopped")
+        return
+    try:
+        rmtree(tmppkg_path)
+    except OSError as e:
+        print("Error removing files: %s" % e)
 
     print("Loading dll: %s" % join(install_path, "docloudext.dll"))
-    os.system("regsvr32 %s" % join(install_path, "docloudext.dll"))
+    os.system("regsvr32 /s %s" % join(install_path, "docloudext.dll"))
 
     print("Starting service:")
     os.system(join(install_path, "docloud-svc.exe"))
@@ -121,7 +145,7 @@ def uninstall(new_path=None):
         docloudext_dll = join(install_path, "docloudext.dll")
         if os.path.exists(docloudext_dll):
             print("Unloading dll %s" % docloudext_dll)
-            os.system("regsvr32 /u %s" % docloudext_dll)
+            os.system("regsvr32 /s /u %s" % docloudext_dll)
         os.system("taskkill /f /im explorer.exe")
         time.sleep(0.5)
 
