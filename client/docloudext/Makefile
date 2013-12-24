@@ -26,7 +26,7 @@ fileinfo.o: fileinfo_sqlite.cpp
 
 docloudext.dll: $(OBJS) ../shared/reg.o ../shared/sqlite.o ../shared/docloudfile.o
 	@echo "$(CXX) $^ -o $@ $(LIBS) $(LDFLAGS)"
-	@$(CXX) $(LDFLAGS) -o $@ $(OBJS) -shared -s -Wl,--subsystem,windows,--out-implib,$@.a $(LIBS)
+	@$(CXX) $(LDFLAGS) -o $@ $^ -shared -s -Wl,--subsystem,windows,--out-implib,$@.a $(LIBS)
 
 dependencies: $(DEPS)
 
