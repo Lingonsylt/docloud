@@ -1,12 +1,12 @@
 .PHONY: all clean
+-include config.mk
 
 all:
-	-cd shared && make $@
-	-cd docloudext && make $@
-	-cd service && make $@
-
+	@$(MAKE) $(MFLAGS) all -C shared
+	@$(MAKE) $(MFLAGS) all -C docloudext
+	@$(MAKE) $(MFLAGS) all -C service
 clean:
-	-cd shared && make $@
-	-cd docloudext && make $@
-	-cd service && make $@
+	@$(MAKE) $(MFLAGS) clean -C shared
+	@$(MAKE) $(MFLAGS) clean -C docloudext
+	@$(MAKE) $(MFLAGS) clean -C service
 

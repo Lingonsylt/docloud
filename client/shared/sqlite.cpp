@@ -3,11 +3,16 @@
 #include "sqlite.h"
 #include "reg.h"
 
+#ifdef WIN32
+#define swprintf _snwprintf
+#endif
+
 struct sqlite3 *sqlite_db = NULL;
 
 const wchar_t *
 sqlite_get_db_path16()
 {
+	static wchar_t install_path16[MAX_PATH];
 	static wchar_t db_path16[MAX_PATH];
 	static int found_path = 0;
 	HRESULT hr;
@@ -15,9 +20,11 @@ sqlite_get_db_path16()
 	if (found_path) return db_path16;
 
 	/* Set default value for subkey */
-	hr = RegGetKeyString(HKEY_LOCAL_MACHINE, 
-	    L"SOFTWARE\\doCloud\\doCloud", L"database",
-	    db_path16, sizeof(db_path16));
+	hr = RegGetKeyString(HKEY_LOCAL_MACHINE,
+	    L"SOFTWARE\\doCloud\\doCloud", L"install_path",
+	    install_path16, sizeof(install_path16));
+
+    swprintf(db_path16, sizeof(db_path16), L"%s/db.sqlite", install_path16);
 
 	wprintf(L"Path: %s\n", db_path16);
 	if (SUCCEEDED(hr)) {

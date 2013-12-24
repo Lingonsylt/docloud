@@ -1,11 +1,14 @@
+-include ../config.mk
 CFLAGS+=-DUNICODE -D_UNICODE
 CXXFLAGS+=-DUNICODE -D_UNICODE -Isqlite3
 
-OBJECTS=reg.o sqlite.o docloudfile.o
+OBJS=reg.o sqlite.o docloudfile.o
 
-all: $(OBJECTS)
-	-cd sqlite3 && make all
+.PHONY: all clean
+
+all: $(OBJS)
+	@make $(MFLAGS) -C sqlite3 all
 
 clean:
-	-cd sqlite3 && make clean
-	-rm $(OBJECTS)
+	@make $(MFLAGS) -C sqlite3 clean
+	-rm -f $(OBJS)
