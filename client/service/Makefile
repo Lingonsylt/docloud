@@ -7,12 +7,23 @@ LDFLAGS+=-g -static-libgcc -static-libstdc++
 LIBS+=-lshlwapi -L../shared/sqlite3 -lsqlite3 -lole32
 OBJS=main.o dirwatcher.o service.o sqlitewatcher.o docloudfile.o ../shared/reg.o ../shared/sqlite.o
 
-.PHONY: clean
+
+.PHONY: clean all
 
 all: docloud-svc.exe
 
-docloud-svc.exe: $(OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
-clean:
-	-rm -f docloud-svc.exe $(OBJS)
+DEPS=$(patsubst %.o, %.d, $(OBJS))
 
+docloud-svc.exe: $(OBJS)
+	@echo "$(CXX) $^ -o $@"
+	@$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+dependencies: $(DEPS)
+
+deps: dependencies
+
+clean:
+	-rm -f docloud-svc.exe $(OBJS) $(OBJS:%.o=%.d)
+
+-include $(OBJS:%.o=%.d)
+-include ../config.mk

@@ -7,14 +7,19 @@ CFLAGS=-L%rootdir%\lib\win64\debug -I %rootdir%\include\windows\crtl -I %rootdir
 
 LDFLAGS= -shared -s -Wl,--subsystem,windows,--out-implib,$@.a -static-libgcc
 
-.PHONY: clean
+.PHONY: all clean
+
+%.o: %.c
+	@echo "$(CC) $<"
+	@$(CC) -c -o $@ $< $(CFLAGS)
 
 all: sqlite3.dll
 	cp sqlite3.dll ../../service/
 	cp sqlite3.dll ../../docloudext/
 
 sqlite3.dll: sqlite3.o shell.o
-	$(CC) -o $@ $^ $(LDFLAGS)
+	@echo "$(CC) @^ -o $@"
+	@$(CC) -o $@ $^ $(LDFLAGS)
 
 clean:
 	-rm -f sqlite3.o shell.o sqlite3.dll

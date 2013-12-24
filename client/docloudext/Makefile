@@ -1,10 +1,7 @@
-
-CFLAGS+=-DUNICODE -D_UNICODE
 CXXFLAGS+=-DUNICODE -D_UNICODE -I../shared -I../shared/sqlite3
-# -static-libgcc -static-libstdc++
 LDFLAGS+=-shared -L../shared/sqlite3 -static-libgcc -static-libstdc++
 LIBS+=-lshlwapi -lshell32 -luuid -lole32 -lgdi32 -lsqlite3
-OBJS=dllmain.o shellext.o resource.o fileinfo.o docloudext.def ../shared/reg.o ../shared/sqlite.o
+SRCS=dllmain.cpp shellext.cpp fileinfo_sqlite.cpp ../shared/reg.cpp ../shared/sqlite.cpp
 
 RESCOMP?=$(CROSS_COMPILE)windres
 WINDRES_CXX=$(CXX)
@@ -14,13 +11,28 @@ WINDRES_FLAGS=--preprocessor="$(WINDRES_CXX) -E -xc"
 
 all: docloudext.dll
 
+OBJS=$(patsubst %.cpp, %.o, $(SRCS))
+OBJS+=resource.o
+DEPS=$(patsubst %.cpp, %.d, $(SRCS))
+
 resource.o: doCloudExt.rc
-	$(RESCOMP) $(WINDRES_FLAGS) --input-format=rc --output-format=coff -i $? -o $@
+	@echo "$(RESCOMP) $<"
+	@$(RESCOMP) $(WINDRES_FLAGS) --input-format=rc --output-format=coff -i $? -o $@
 
 fileinfo.o: fileinfo_sqlite.cpp
-	$(CXX) -o $@ -c $^ $(CXXFLAGS)
+	@echo "$(CXX) $<"
+	@$(CXX) -o $@ -c $^ $(CXXFLAGS)
 
 docloudext.dll: $(OBJS)
-	$(CXX) $(LDFLAGS) -o $@ $(OBJS) -shared -s -Wl,--subsystem,windows,--out-implib,$@.a $(LIBS)
+	@echo "$(CXX) $^ -o $@"
+	@$(CXX) $(LDFLAGS) -o $@ $(OBJS) -shared -s -Wl,--subsystem,windows,--out-implib,$@.a $(LIBS)
+
+dependencies: $(DEPS)
+
+deps: dependencies
+
 clean:
-	-rm *.o *.dll *.a
+	-rm -f $(OBJS) $(DEPS) *.dll *.a
+
+-include $(OBJS:%.o=%.d)
+-include ../config.mk
