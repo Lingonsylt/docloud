@@ -1,3 +1,4 @@
+-include ../config.mk
 
 # Note - our SRW-locks in dirwatcher.cpp requires Vista or later!,
 # thus, we have our _WIN32_WINNT=0x0600
@@ -26,4 +27,3 @@ clean:
 	-rm -f docloud-svc.exe $(OBJS) $(OBJS:%.o=%.d)
 
 -include $(OBJS:%.o=%.d)
--include ../config.mk

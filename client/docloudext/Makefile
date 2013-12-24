@@ -1,3 +1,4 @@
+-include ../config.mk
 CXXFLAGS+=-DUNICODE -D_UNICODE -I../shared -I../shared/sqlite3
 LDFLAGS+=-shared -L../shared/sqlite3 -static-libgcc -static-libstdc++
 LIBS+=-lshlwapi -lshell32 -luuid -lole32 -lgdi32 -lsqlite3
@@ -24,7 +25,7 @@ fileinfo.o: fileinfo_sqlite.cpp
 	@$(CXX) -o $@ -c $^ $(CXXFLAGS)
 
 docloudext.dll: $(OBJS)
-	@echo "$(CXX) $^ -o $@"
+	@echo "$(CXX) $^ -o $@ $(LIBS) $(LDFLAGS)"
 	@$(CXX) $(LDFLAGS) -o $@ $(OBJS) -shared -s -Wl,--subsystem,windows,--out-implib,$@.a $(LIBS)
 
 dependencies: $(DEPS)
@@ -35,4 +36,3 @@ clean:
 	-rm -f $(OBJS) $(DEPS) *.dll *.a
 
 -include $(OBJS:%.o=%.d)
--include ../config.mk
