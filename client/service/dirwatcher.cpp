@@ -213,7 +213,7 @@ int
 dirWatcher::watch()
 {
 	unsigned long nb;
-	unsigned long long key;
+	ULONG_PTR key;
 	OVERLAPPED *overlappedptr;
 	directory *dir;
 
