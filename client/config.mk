@@ -50,8 +50,8 @@ xc-win32: export OBJDUMP=i586-mingw32msvc-objdump
 xc-win32: export RESCOMP=i586-mingw32msvc-windres
 
 xc-win64: win64
-xc-win64: export CFLAGS="-DWINVER=0x0400 -D__MINGW32__ -D__WIN95__ -D__GNUWIN32__ -DSTRICT -DHAVE_W32API_H -D__WXMSW__ -D__WINDOWS__"
-xc-win64: export LDFLAGS="-DWINVER=0x0400 -D__MINGW32__ -D__WIN95__ -D__GNUWIN32__ -DSTRICT -DHAVE_W32API_H -D__WXMSW__ -D__WINDOWS__ -lgcc -ladvapi32"
+xc-win64: export CFLAGS+="-DWINVER=0x0400 -D__MINGW32__ -D__WIN95__ -D__GNUWIN32__ -DSTRICT -DHAVE_W32API_H -D__WXMSW__ -D__WINDOWS__"
+xc-win64: export LDFLAGS+="-DWINVER=0x0400 -D__MINGW32__ -D__WIN95__ -D__GNUWIN32__ -DSTRICT -DHAVE_W32API_H -D__WXMSW__ -D__WINDOWS__ -lgcc -ladvapi32"
 xc-win64: export CC=x86_64-w64-mingw32-gcc
 xc-win64: export CXX=x86_64-w64-mingw32-c++
 xc-win64: export LD=x86_64-w64-mingw32-ld
