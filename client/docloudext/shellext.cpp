@@ -24,7 +24,7 @@ extern "C" {
 #include <shlwapi.h>
 #include "shellext.h"
 #include "resource.h"
-#include "fileinfo.h"
+#include "common.h"
 #include <stdio.h>
 
 extern HINSTANCE g_hInst;
@@ -325,25 +325,16 @@ STDMETHODIMP
 ShellExt::IsMemberOf(PCWSTR pwszPath, DWORD dwAttrib)
 {
 	char filename_utf8[250];
-	struct file_info file;
+	doCloudFile file;
 	int ret;
 
-	WideCharToMultiByte(CP_UTF8, 0, pwszPath, -1,
-	    filename_utf8, sizeof(filename_utf8), NULL, NULL);
-
-	if (strlen(filename_utf8) < MIN_PATH_LEN)
-		return S_FALSE;
-
-	if (!docloud_is_correct_filetype(filename_utf8)) {
+	if (!docloud_is_correct_filetype(pwszPath)) {
 		return S_FALSE;
 	}
 
-	file.id = -1;
-	file.filename = filename_utf8;
-	//file.parent_flags = DC_PARENT_IGNORE;
+	file.getFromPath(pwszPath);
 
-	ret = docloud_get_file_info(&file);
-	if (ret == DC_OK && (file.id != -1 || file.parent_flags & DC_PARENT_ADDED)) {
+	if (file.id != -1) {
 		if (file.blacklisted)
 			return S_FALSE;
 		return S_OK;

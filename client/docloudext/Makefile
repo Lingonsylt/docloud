@@ -2,7 +2,7 @@
 CXXFLAGS+=-DUNICODE -D_UNICODE -I../shared -I../shared/sqlite3
 LDFLAGS+=-shared -L../shared/sqlite3 -static-libgcc -static-libstdc++
 LIBS+=-lshlwapi -lshell32 -luuid -lole32 -lgdi32 -lsqlite3
-SRCS=dllmain.cpp shellext.cpp fileinfo_sqlite.cpp ../shared/reg.cpp ../shared/sqlite.cpp
+SRCS=dllmain.cpp shellext.cpp
 
 RESCOMP?=$(CROSS_COMPILE)windres
 WINDRES_CXX=$(CXX)
@@ -13,7 +13,7 @@ WINDRES_FLAGS=--preprocessor="$(WINDRES_CXX) -E -xc"
 all: docloudext.dll
 
 OBJS=$(patsubst %.cpp, %.o, $(SRCS))
-OBJS+=resource.o
+OBJS+=resource.o ../shared/reg.o ../shared/sqlite.o ../shared/common.o ../shared/config.o
 DEPS=$(patsubst %.cpp, %.d, $(SRCS))
 
 resource.o: doCloudExt.rc
@@ -33,6 +33,6 @@ dependencies: $(DEPS)
 deps: dependencies
 
 clean:
-	-rm -f $(OBJS) $(DEPS) *.dll *.a
+	-rm -f $(patsubst %.cpp, %.o, $(SRCS)) $(DEPS) *.dll *.a
 
 -include $(OBJS:%.o=%.d)
