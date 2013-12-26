@@ -4,6 +4,7 @@
 
 HRESULT RegSetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PCWSTR data);
 HRESULT RegGetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PWSTR data, DWORD data_sz);
+PWSTR RegGetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name);
 
 HRESULT RegisterInprocServer(PCWSTR pszModule, const CLSID& clsid, 
     PCWSTR pszFriendlyName, PCWSTR pszThreadModel);

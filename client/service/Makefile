@@ -6,7 +6,7 @@ CFLAGS+=-DUNICODE -D_UNICODE -D_WIN32_WINNT=0x0600
 CXXFLAGS+=-DUNICODE -D_UNICODE -g -D_WIN32_WINNT=0x0600 -I../shared -I../shared/sqlite3
 LDFLAGS+=-L../shared/sqlite3 -static-libgcc -static-libstdc++
 LIBS+=-lshlwapi -L../shared/sqlite3 -lsqlite3 -lole32
-OBJS=main.o dirwatcher.o service.o sqlitewatcher.o ../shared/reg.o ../shared/sqlite.o ../shared/docloudfile.o
+OBJS=main.o dirwatcher.o service.o sqlitewatcher.o ../shared/reg.o ../shared/sqlite.o ../shared/docloudfile.o ../shared/common.o ../shared/config.o
 
 
 .PHONY: clean all
@@ -24,6 +24,6 @@ dependencies: $(DEPS)
 deps: dependencies
 
 clean:
-	-rm -f docloud-svc.exe $(OBJS) $(OBJS:%.o=%.d)
+	-rm -f docloud-svc.exe $(OBJS) $(DEPS)
 
--include $(OBJS:%.o=%.d)
+-include $(DEPS)

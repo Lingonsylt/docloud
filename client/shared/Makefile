@@ -2,7 +2,7 @@
 CFLAGS+=-DUNICODE -D_UNICODE
 CXXFLAGS+=-DUNICODE -D_UNICODE -Isqlite3
 
-OBJS=reg.o sqlite.o docloudfile.o
+OBJS=reg.o sqlite.o docloudfile.o config.o common.o
 
 .PHONY: all clean
 

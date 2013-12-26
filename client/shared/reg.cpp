@@ -22,6 +22,7 @@ extern "C" {
 
 #include "reg.h"
 
+
 HRESULT
 RegSetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PCWSTR data)
 {
@@ -46,6 +47,38 @@ RegSetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PCWSTR data)
 
 	RegCloseKey(subhkey);
 	return hr;
+}
+
+PWSTR
+RegGetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name)
+{
+	HRESULT hr;
+	HKEY subhkey = NULL;
+	DWORD sz;
+	PWSTR str;
+
+	// Try to open the specified registry key. 
+	hr = HRESULT_FROM_WIN32(RegOpenKeyEx(hkey, subkey_name, 0, 
+		KEY_READ, &subhkey));
+
+	if (!SUCCEEDED(hr)) return NULL;
+
+	// Get the data for the specified value name.
+	hr = HRESULT_FROM_WIN32(RegQueryValueEx(subhkey, value_name, NULL, NULL, NULL, &sz));
+	if (!SUCCEEDED(hr)) {
+		return NULL;
+	}
+
+	str = new wchar_t[sz];
+	hr = HRESULT_FROM_WIN32(RegQueryValueEx(subhkey, value_name, NULL, NULL,
+		reinterpret_cast<LPBYTE>(str), &sz));
+	if (!SUCCEEDED(hr)) {
+		delete str;
+		return NULL;
+	}
+
+	RegCloseKey(subhkey);
+	return str;
 }
 
 
