@@ -14,8 +14,6 @@ sqliteWatcher::watch()
 {
 	HANDLE hnotify;
 	unsigned long dwWaitStatus;
-	WIN32_FILE_ATTRIBUTE_DATA fileInfo;
-	FILETIME lastWrite;
 	const wchar_t *db_path;
 	int rv;
 	
@@ -23,15 +21,6 @@ sqliteWatcher::watch()
 		return -1;
 
 	db_path = sqlite_get_db_path16();
-	if (!GetFileAttributesEx(db_path,
-		GetFileExInfoStandard,
-		&fileInfo)) {
-		wprintf(L"ERROR GetFileAttributesEx() failed\n");
-		return -1;
-	}
-
-	lastWrite.dwLowDateTime = fileInfo.ftLastWriteTime.dwLowDateTime;
-	lastWrite.dwHighDateTime = fileInfo.ftLastWriteTime.dwHighDateTime;
 
 	/* Create changehandles for all paths */
 	wchar_t *path;
@@ -71,70 +60,53 @@ sqliteWatcher::watch()
 
 		if (dwWaitStatus != WAIT_OBJECT_0) continue;
 
-		if (!GetFileAttributesEx(db_path,
-			GetFileExInfoStandard,
-			&fileInfo)) {
-			wprintf(L"ERROR GetFileAttributesEx() failed\n");
-			break;
-		}
+		struct sqlite3_stmt *stmt;
+		doCloudFile *dc_file;
 
-		if (CompareFileTime(&(fileInfo.ftLastWriteTime), &lastWrite) != 0) {
-			lastWrite.dwLowDateTime = fileInfo.ftLastWriteTime.dwLowDateTime;
-			lastWrite.dwHighDateTime = fileInfo.ftLastWriteTime.dwHighDateTime;
-
-			struct sqlite3_stmt *stmt;
-			doCloudFile *dc_file;
-
-			/* FIXME! We currently have to wait for buffers to
-			 * flush, otherwise our SELECT won't return anything
-			 */
-			Sleep(100);
-			/* Get list of updated files */
-			rv = sqlite3_prepare(sqlite_db,
-			    "SELECT id FROM docloud_files WHERE updated <> uploaded OR uploaded = 0",
-			    -1, &stmt, NULL);
-			if (rv == SQLITE_ERROR) {
-				wprintf(L"sqlite3_prepare(): %s\n",
-				    sqlite3_errmsg(sqlite_db));
-				sqlite3_finalize(stmt);
-				return -1;
-			}
-			while ((rv = sqlite3_step(stmt)) == SQLITE_ROW) {
-				dc_file = new doCloudFile;
-
-				dc_file->getFromId(sqlite3_column_int(stmt, 0));
-				wprintf(L"File %s [%d] [", dc_file->filename.c_str(), dc_file->id);
-
-				if (PathIsDirectory(dc_file->filename.c_str())) {
-					/* FIXME - handle the case where we have added a file inside
-					 * this directory and then blacklist it -
-					 * we should still be listening for changes in the directory
-					 * but only act when the added file changes
-					 */
-					if (dc_file->blacklisted)
-						dirwatcher->remDirectory(dc_file->filename.c_str());
-					else if (dc_file->uploaded == 0) /* We havent seen this before */
-						dirwatcher->addDirectory(dc_file->filename.c_str());
-				} else if (! dc_file->blacklisted) {
-					std::wstring dirpath = dc_file->filename;
-					dirpath.erase(dirpath.find_last_of(L"\\/"));
-					dirwatcher->addDirectory(dc_file->filename.c_str());
-				}
-
-				std::vector<doCloudFileTag*>::iterator it;
-				for (it = dc_file->tags.begin(); it != dc_file->tags.end(); it ++) {
-//				for (auto it : dc_file->tags) {
-					wprintf(L"%d:%s,", (*it)->id, (*it)->name.c_str());
-				}
-				wprintf(L"]\n");
-			}
-
-			if (rv == SQLITE_ERROR) {
-				wprintf(L"sqlite3_prepare(): %s\n",
-				    sqlite3_errmsg(sqlite_db));
-			}
+		/* Get list of updated files */
+		rv = sqlite3_prepare(sqlite_db,
+		    "SELECT id FROM docloud_files WHERE updated <> uploaded OR uploaded = 0",
+		    -1, &stmt, NULL);
+		if (rv == SQLITE_ERROR) {
+			wprintf(L"sqlite3_prepare(): %s\n",
+			    sqlite3_errmsg(sqlite_db));
 			sqlite3_finalize(stmt);
+			return -1;
 		}
+		while ((rv = sqlite3_step(stmt)) == SQLITE_ROW) {
+			dc_file = new doCloudFile;
+
+			dc_file->getFromId(sqlite3_column_int(stmt, 0));
+			wprintf(L"File %s [%d] [", dc_file->filename.c_str(), dc_file->id);
+
+			if (PathIsDirectory(dc_file->filename.c_str())) {
+				/* FIXME - handle the case where we have added a file inside
+				 * this directory and then blacklist it -
+				 * we should still be listening for changes in the directory
+				 * but only act when the added file changes
+				 */
+				if (dc_file->blacklisted)
+					dirwatcher->remDirectory(dc_file->filename.c_str());
+				else if (dc_file->uploaded == 0) /* We havent seen this before */
+					dirwatcher->addDirectory(dc_file->filename.c_str());
+			} else if (! dc_file->blacklisted) {
+				std::wstring dirpath = dc_file->filename;
+				dirpath.erase(dirpath.find_last_of(L"\\/"));
+				dirwatcher->addDirectory(dc_file->filename.c_str());
+			}
+
+			std::vector<doCloudFileTag*>::iterator it;
+			for (it = dc_file->tags.begin(); it != dc_file->tags.end(); it ++) {
+				wprintf(L"%d:%s,", (*it)->id, (*it)->name.c_str());
+			}
+			wprintf(L"]\n");
+		}
+
+		if (rv == SQLITE_ERROR) {
+			wprintf(L"sqlite3_prepare(): %s\n",
+			    sqlite3_errmsg(sqlite_db));
+		}
+		sqlite3_finalize(stmt);
 
 		/* Add to list again */
 		if (FindNextChangeNotification(hnotify) == FALSE) {
