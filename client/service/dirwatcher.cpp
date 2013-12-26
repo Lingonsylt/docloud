@@ -7,6 +7,7 @@
 #include <string>
 #include "sqlite.h"
 #include "dirwatcher.h"
+#include "common.h"
 
 /* strsafe.h-wrapper for mingw, in order to suppress
  * warnings due to lack of strsafe.lib
@@ -247,10 +248,15 @@ dirWatcher::watch()
 		{
 			pIter->FileName[pIter->FileNameLength / sizeof(TCHAR)] = 0;
 
+			/* Skip unknown filetypes */
+			if (!docloud_is_correct_filetype(pIter->FileName))
+				continue;
+
 			/* Tell the workers we've found something */
 			std::wstring *wstr = new std::wstring(dir->path);
 			wstr->append(L"\\");
 			wstr->append(pIter->FileName);
+
 			PostQueuedCompletionStatus(updatePort, pIter->Action, (ULONG_PTR)wstr, NULL);
 
 			if(pIter->NextEntryOffset == 0UL)
@@ -293,6 +299,7 @@ dirWatcher::work()
 	std::wstring *path;
 	ULONG_PTR ptr;
 	OVERLAPPED *overlapped;
+	doCloudFile *file;
 
 	for (;;) {
 		HRESULT ret = GetQueuedCompletionStatus(updatePort, &action, &ptr, &overlapped, WORKER_TIMEOUT);
@@ -307,5 +314,11 @@ dirWatcher::work()
 		if (path == NULL) continue;
 
 		wprintf(L"[worker] Updated path %s (%d)\n", path->c_str(), action);
+		file = new doCloudFile;
+		file->getFromPath(path->c_str());
+
+		if (file->id != -1) {
+			wprintf(L"[worker] this file is one of ours!\n");
+		}
 	}
 }
