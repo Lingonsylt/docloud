@@ -2,6 +2,7 @@
 #include <vector>
 #include <sstream>
 #include <iostream>
+#include "config.h"
 
 std::vector<std::wstring>
 splitw(const std::wstring &str, wchar_t delim, std::vector<std::wstring> &elems)
@@ -22,9 +23,22 @@ splitw(const std::wstring &s, wchar_t delim)
     return elems;
 }
 
-int docloud_is_correct_filetype(wchar_t *name)
+int docloud_is_correct_filetype(const wchar_t *name)
 {
-	wchar_t *ptr;
+	std::wstring str;
+	std::vector<std::wstring> list;
 
-	return 1;
+	list = splitw(config::getStr(L"accepted_filetypes"), L';');
+
+	str = name;
+	str.erase(0, str.find_last_of('.'));
+
+	std::vector<std::wstring>::iterator it;
+	for (it = list.begin(); it != list.end(); it ++) {
+		if (str == (*it)) {
+			return 1;
+		}
+	}
+
+	return 0;
 }
