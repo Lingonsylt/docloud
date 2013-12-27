@@ -32,13 +32,13 @@ SRCS=settings.cpp
 
 .PHONY: clean all
 
-all: settings.exe
+all: docloud-settings.exe
 
 OBJS=$(patsubst %.cpp, %.o, $(SRCS))
 OBJS+=../shared/reg.o ../shared/common.o ../shared/config.o
 DEPS=$(patsubst %.o, %.d, $(OBJS))
 
-settings.exe: $(OBJS)
+docloud-settings.exe: $(OBJS)
 	@echo "$(CXX) $^ -o $@"
 	@$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
