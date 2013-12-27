@@ -14,6 +14,8 @@ select-build:
 
 win32: export TARGET=WIN32
 win64: export TARGET=WIN64
+xc-win32: export TARGET=WIN32
+xc-win64: export TARGET=WIN64
 
 settings:
 	@echo ---------------------------------------------------
