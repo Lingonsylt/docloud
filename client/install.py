@@ -24,7 +24,6 @@ def _get_pkg_path(default=None):
     return pkg_path
 
 def package(bits="x64"):
-    print("bits: %s" % bits)
     pkg_path = _get_pkg_path()
     tmppkg_path = os.path.join(pkg_path, "tmppkg")
     print("Creating package at: %s" % pkg_path)
@@ -196,7 +195,7 @@ if "uninstall" in args:
     uninstall()
 if "package" in args:
     x86 = "--target-x86" in args
-    pkg_path = package("x86" if x86 else "x64")
+    pkg_path = package("x86" if x86 else"x64")
     if "install" in args:
         install(pkg_path)
 elif "install" in args:
