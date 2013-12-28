@@ -5,7 +5,7 @@
 
 typedef struct __doCloudFileTag {
 		int id;
-		std::wstring name;
+		std::string name;
 }doCloudFileTag;
 
 class doCloudFile {
@@ -13,13 +13,13 @@ class doCloudFile {
 		doCloudFile();
 		~doCloudFile();
 		int getFromId(int searchId);
-		int getFromPath(const wchar_t *path);
+		int getFromPath(const char *path);
 		int clear();
 
 		int save();
 	
 		int id;
-		std::wstring filename;
+		std::string filename;
 		int blacklisted;
 		time_t updated;
 		time_t uploaded;

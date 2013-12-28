@@ -34,18 +34,7 @@ save_extensions()
 	} while (gtk_tree_model_iter_next(
 		GTK_TREE_MODEL(filetype_liststore), &iter) == TRUE);
 
-	wchar_t *output;
-	int sz;
-	sz = mbstowcs(NULL, str.c_str(), 0)+1;
-	if (sz == 0) {
-		printf("Error - string %s contains invalid multibyte sequence!\n",
-		    str.c_str());
-		return;
-	}
-	output = new wchar_t[sz];
-	mbstowcs(output, str.c_str(), sz);
-
-	config::setStr(L"accepted_filetypes", output);
+	config::setStr("accepted_filetypes", str.c_str());
 }
 
 static void
@@ -59,33 +48,19 @@ static void
 load_filetypes_list(GtkBuilder *builder)
 {
 	GtkTreeIter it;
-	std::vector<std::wstring> list;
-	std::vector<std::wstring>::iterator type_it;
+	std::vector<std::string> list;
+	std::vector<std::string>::iterator type_it;
 	int id = 1;
 
-	list = splitw(config::getStr(L"accepted_filetypes"), L';');
+	list = split(config::getStr("accepted_filetypes"), ';');
 
 
 	for (type_it = list.begin(); type_it != list.end(); type_it ++) {
-		gchar *filetype_str8;
 		int sz;
-
-		sz = wcstombs(NULL, (*type_it).c_str(), 0) + 1;
-		if (sz == 0) {
-			wprintf(L"Encountered character that cannot be "
-			    L"describes as a multibyte sequence in string %s\n",
-			    (*type_it).c_str());
-			continue;
-		}
-		filetype_str8 = new gchar[sz];
-
-		sz = wcstombs(filetype_str8, (*type_it).c_str(), sz);
 
 		gtk_list_store_append(filetype_liststore, &it);
 		gtk_list_store_set(filetype_liststore, &it, 
-		    0, id++, 1, filetype_str8, -1);
-
-		delete filetype_str8;
+		    0, id++, 1, (*type_it).c_str(), -1);
 	}
 }
 

@@ -5,6 +5,7 @@
 #include "dirwatcher.h"
 #include "sqlitewatcher.h"
 #include "service.h"
+#include "common.h"
 
 DWORD WINAPI  (__stdcall *service_exec_function)(LPVOID) = NULL;
 extern int service_is_running;
@@ -31,12 +32,6 @@ DWORD WINAPI thread_work(LPVOID param)
 	d->work();
 }
 
-const wchar_t *list[] = {
-	L"h:\\temp\\",
-	L"h:\\temp\\ab\\abc.txt",
-	NULL
-};
-
 DWORD WINAPI main_loop(LPVOID param)
 {
 	dirWatcher *d = new dirWatcher;
@@ -46,16 +41,16 @@ DWORD WINAPI main_loop(LPVOID param)
 	sqlw->setDirWatcher(d);
 
 	CreateThread(NULL, 0, thread_sqlitewatch, sqlw, 0, &threadid);
-	wprintf(L"Created thread for sqlitewatcher: %d\n", threadid);
+	printf("Created thread for sqlitewatcher: %d\n", threadid);
 
 	/* Read list of directories from DB */
 	d->loadDirList();
 
 	CreateThread(NULL, 0, thread_dirwatch, d, 0, &threadid);
-	wprintf(L"Created thread for dirwatcher %d\n", threadid);
+	printf("Created thread for dirwatcher %d\n", threadid);
 
 	CreateThread(NULL, 0, thread_work, d, 0, &threadid);
-	wprintf(L"Created worker thread %d\n", threadid);
+	printf("Created worker thread %d\n", threadid);
 
 	Sleep(100000);
 	delete d;
@@ -64,7 +59,7 @@ DWORD WINAPI main_loop(LPVOID param)
 }
 
 void
-usage(char *filename)
+usage(const char *filename)
 {
 	printf("docloud service\n"
 	    "  Usage: %s [-iu]\n"
@@ -76,7 +71,7 @@ usage(char *filename)
 int
 main(int argc, char *argv[])
 {
-	const wchar_t *service_name = L"doCloud";
+	const char *service_name = "doCloud";
 	char buf[MAX_PATH];
 	int install_as_service = 0;
 	int run_as_service = 0;
@@ -123,19 +118,19 @@ main(int argc, char *argv[])
 		cmd += filename;
 		cmd += L"\" -S";
 
-		retval = install_service(service_name,
-			    service_name, cmd.c_str(), NULL, NULL);
+		retval = install_service(widen(service_name).c_str(),
+			    widen(service_name).c_str(), cmd.c_str(), NULL, NULL);
 		if (retval != -1) {
-			wprintf(L"Service successfully installed under name %s!\n", service_name);
+			printf("Service successfully installed under name %s!\n", service_name);
 		}
 		return 0;
 	}else if (run_as_service) {
-		wprintf(L"Starting service\n");
-		retval = service_start(service_name, argc, argv);
+		printf("Starting service\n");
+		retval = service_start(widen(service_name).c_str(), argc, argv);
 	}else if (uninstall_service_flag) {
-		retval = uninstall_service(service_name);
+		retval = uninstall_service(widen(service_name).c_str());
 		if (retval != -1) {
-			wprintf(L"Service successfully uninstalled!\n");
+			printf("Service successfully uninstalled!\n");
 		}
 		return 0;
 	} 

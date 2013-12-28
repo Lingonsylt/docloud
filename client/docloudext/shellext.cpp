@@ -43,7 +43,7 @@ ShellExt::ShellExt(void) : m_cRef(1),
 	dataObj(NULL),
 	moduleFilename(NULL)
 {
-	wchar_t filename[MAX_PATH];
+	wchar_t wide_filename[MAX_PATH];
 	InterlockedIncrement(&g_cDllRef);
 	HRESULT ret;
 
@@ -53,7 +53,7 @@ ShellExt::ShellExt(void) : m_cRef(1),
 	//m_hMenuBmp = LoadImage(g_hInst, MAKEINTRESOURCE(IDB_OK), 
 	//   IMAGE_BITMAP, 0, 0, LR_DEFAULTSIZE | LR_LOADTRANSPARENT);
 
-	ret = GetModuleFileName(g_hInst, filename, ARRAYSIZE(filename));
+	ret = GetModuleFileName(g_hInst, wide_filename, ARRAYSIZE(wide_filename));
 
 	/* Ignore errors and keep moduleFilename as NULL -
 	 * we'll lose our overlayicons, but everything else works
@@ -61,7 +61,7 @@ ShellExt::ShellExt(void) : m_cRef(1),
 	if (ret > 0 && ret < MAX_PATH)
 	{
 		moduleFilename = new wchar_t[ret+1];
-		StringCchCopy(moduleFilename, ret+1, filename);
+		StringCchCopy(moduleFilename, ret+1, wide_filename);
 	}
 }
 
@@ -152,7 +152,7 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 {
 	HRESULT hres;
 	UINT idCmd;
-	const wchar_t *text;
+	const char *text = "";
 	int ret;
 
 	// If uFlags include CMF_DEFAULTONLY then we should not do anything.
@@ -180,11 +180,13 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 	v_files.clear();
 	for (int i = 0; i < nFiles; i++) {
 		doCloudFile *dcfile;
-		wchar_t filename[300];
+		wchar_t wide_filename[300];
+		std::string filename;
 
 		ret = DragQueryFile((HDROP)medium.hGlobal, i, NULL, 0);
 		log("strlen: %d\n", ret);
-		ret = DragQueryFile((HDROP)medium.hGlobal, i, filename, ARRAYSIZE(filename));
+		ret = DragQueryFile((HDROP)medium.hGlobal, i, wide_filename, ARRAYSIZE(wide_filename));
+		filename = narrow(wide_filename);
 
 		if (!ret) {
 			log("Could not get file for index %d\n", i);
@@ -192,8 +194,8 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 		}
 
 		dcfile = new doCloudFile;
-		if ((ret = dcfile->getFromPath(filename)) == -1) {
-			log("doCloudFile.getFromPath(%s): %d\n", filename, ret);
+		if ((ret = dcfile->getFromPath(filename.c_str())) == -1) {
+			log("doCloudFile.getFromPath(%s): %d\n", filename.c_str(), ret);
 			delete dcfile;
 			continue;
 		}
@@ -201,7 +203,7 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 		if (dcfile->filename.length()) {
 			logw(L"Found file [%ld] %s\n", dcfile->id, dcfile->filename.c_str());
 		} else {
-			logw(L"Could not find file for path %s\n", filename);
+			logw(L"Could not find file for path %s\n", filename.c_str());
 		}
 		log("Blacklisted: %ld\n", dcfile->blacklisted);
 
@@ -211,22 +213,22 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 		/* Add a pointer to the acutal file/folder the user clicked on */
 		if (dcfile->matches_parent) {
 			dcfile->clear();
-			dcfile->filename = filename;
+			dcfile->filename = filename.c_str();
 		}
 		v_files.push_back(dcfile);
 	}
 
 	if (found && !blacklisted) {
-		if (nFiles > 1) text = L"Remove files from doCloud";
-		else text = L"Remove file from doCloud";
+		if (nFiles > 1) text = "Remove files from doCloud";
+		else text = "Remove file from doCloud";
 		idCmd += IDCMD_REMOVE;
 	} else {
-		if (nFiles > 1) text = L"Add files to doCloud";
-		else text = L"Add file to doCloud";
+		if (nFiles > 1) text = "Add files to doCloud";
+		else text = "Add file to doCloud";
 		idCmd += IDCMD_ADD;
 	}
 
-	InsertMenu(hMenu, indexMenu++, MF_STRING|MF_BYPOSITION, idCmd++, text);
+	InsertMenu(hMenu, indexMenu++, MF_STRING|MF_BYPOSITION, idCmd++, widen(text).c_str());
 	InsertMenu(hMenu, indexMenu++, MF_SEPARATOR|MF_BYPOSITION, 0, NULL);
 
 	return MAKE_HRESULT(SEVERITY_SUCCESS, 0, USHORT(idCmd - idCmdFirst));
@@ -284,7 +286,6 @@ STDMETHODIMP ShellExt::InvokeCommand(LPCMINVOKECOMMANDINFO pici)
 		}
 		dcfile->save();
 	}
-	//	OnVerbDisplayFileName(pici->hwnd);
 	return S_OK;
 
 }
@@ -324,15 +325,15 @@ ShellExt::GetPriority(int *priority)
 STDMETHODIMP
 ShellExt::IsMemberOf(PCWSTR pwszPath, DWORD dwAttrib)
 {
-	char filename_utf8[250];
 	doCloudFile file;
+	std::string filename = narrow(pwszPath);
 	int ret;
 
-	if (!docloud_is_correct_filetype(pwszPath)) {
+	if (!docloud_is_correct_filetype(filename.c_str())) {
 		return S_FALSE;
 	}
 
-	file.getFromPath(pwszPath);
+	file.getFromPath(filename.c_str());
 
 	if (file.id != -1) {
 		if (file.blacklisted)
@@ -343,24 +344,3 @@ ShellExt::IsMemberOf(PCWSTR pwszPath, DWORD dwAttrib)
 }
 
 /* }}} END IShellIconOverlayIdentifier Interface */
-
-void ShellExt::OnVerbDisplayFileName(HWND hWnd)
-{
-	wchar_t szMessage[300];
-	int nFiles = 0;
-
-	if (medium.hGlobal)
-		nFiles = DragQueryFile((HDROP)medium.hGlobal, (UINT)-1, 0, 0);
-
-	StringCchPrintf(szMessage, ARRAYSIZE(szMessage), 
-		    L"Your selected file(s):\r\n\r\n");
-
-	for (int i = 0; i < nFiles; i++) {
-		wchar_t filename[300];
-		DragQueryFile((HDROP)medium.hGlobal, i, filename, ARRAYSIZE(filename));
-		StringCchCat(szMessage, ARRAYSIZE(szMessage), filename);
-		StringCchCat(szMessage, ARRAYSIZE(szMessage), L"\r\n");
-
-	}
-	MessageBox(hWnd, szMessage, L"doCloud", MB_OK);
-}

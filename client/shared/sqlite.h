@@ -21,7 +21,6 @@ if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, N
 #define MIN_PATH_LEN 3
 
 extern struct sqlite3 *sqlite_db;
-const wchar_t *sqlite_get_db_path16();
 const char *sqlite_get_db_path();
 int sqlite_connect();
 

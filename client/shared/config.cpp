@@ -3,45 +3,43 @@
 #include "reg.h"
 
 namespace config {
-	int getInt(wchar_t *config) {
+	int getInt(const char *config) {
 
 	}
 
-	bool setStr(const wchar_t *config, const wchar_t *value) {
-		std::wstring result;
+	bool setStr(const char *config, const char *value) {
 		HRESULT ret;
 			
-		ret = RegSetKeyString(HKEY_LOCAL_MACHINE, L"SOFTWARE\\docloud\\docloud", config, value);
+		ret = RegSetKeyString(HKEY_LOCAL_MACHINE, "SOFTWARE\\docloud\\docloud", config, value);
 		if (!SUCCEEDED(ret))
 			return false;
 		return true;
 	}
 
-	bool setStr(const wchar_t *config, std::wstring value) {
+	bool setStr(const char *config, std::string value) {
 
-		std::wstring result;
 		HRESULT ret;
 			
 		return setStr(config, value.c_str());
 	}
 
-	std::wstring getStr(const wchar_t *config) {
-		std::wstring result;
-		wchar_t *str;
+	std::string getStr(const char *config) {
+		std::string result;
+		char *str;
 			
-		str = RegGetKeyString(HKEY_LOCAL_MACHINE, L"SOFTWARE\\docloud\\docloud", config);
+		str = RegGetKeyString(HKEY_LOCAL_MACHINE, "SOFTWARE\\docloud\\docloud", config);
 		if (str != NULL)
 			result = str;
 		return result;
 	}
 
-	std::vector<std::wstring> getList(const wchar_t *config) {
-		std::vector<std::wstring> list;
-		std::wstring str;
+	std::vector<std::string> getList(const char *config) {
+		std::vector<std::string> list;
+		std::string str;
 
 		str = getStr(config);
 
-		list = splitw(str, L'\n');
+		list = split(str, ';');
 		return list;
 	}
 }

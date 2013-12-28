@@ -2,19 +2,19 @@
 #define REG_H
 #include <windows.h>
 
-HRESULT RegSetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PCWSTR data);
-HRESULT RegGetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PWSTR data, DWORD data_sz);
-PWSTR RegGetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name);
+HRESULT RegSetKeyString(HKEY hkey, const char *subkey_name, const char * value_name, const char * data);
+HRESULT RegGetKeyString(HKEY hkey, const char * subkey_name, const char * value_name, char *data, DWORD data_sz);
+char *RegGetKeyString(HKEY hkey, const char * subkey_name, const char * value_name);
 
-HRESULT RegisterInprocServer(PCWSTR pszModule, const CLSID& clsid, 
-    PCWSTR pszFriendlyName, PCWSTR pszThreadModel);
+HRESULT RegisterInprocServer(const char * pszModule, const CLSID& clsid, 
+    const char * pszFriendlyName, const char * pszThreadModel);
 HRESULT UnregisterInprocServer(const CLSID& clsid);
 
-HRESULT RegisterShellExtContextMenuHandler(PCWSTR pszFileType,
-    const CLSID& clsid, PCWSTR pszFriendlyName);
-HRESULT UnregisterShellExtContextMenuHandler(PCWSTR pszFileType, const CLSID& clsid);
+HRESULT RegisterShellExtContextMenuHandler(const char * pszFileType,
+    const CLSID& clsid, const char * pszFriendlyName);
+HRESULT UnregisterShellExtContextMenuHandler(const char * pszFileType, const CLSID& clsid);
 
-HRESULT RegisterShellOverlayIconIdentifier(const CLSID& clsid, PCWSTR name);
-HRESULT UnregisterShellOverlayIconIdentifier(PCWSTR name);
+HRESULT RegisterShellOverlayIconIdentifier(const CLSID& clsid, const char * name);
+HRESULT UnregisterShellOverlayIconIdentifier(const char * name);
 
 #endif /* end of include guard: REG_H */
