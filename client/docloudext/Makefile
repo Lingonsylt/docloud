@@ -1,6 +1,6 @@
 -include ../config.mk
 CXXFLAGS+=-DUNICODE -D_UNICODE -I../shared -I../shared/sqlite3
-LDFLAGS+=-shared -L../shared/sqlite3 -static-libgcc -static-libstdc++
+LDFLAGS+=-L../shared/sqlite3 -static-libgcc -static-libstdc++
 LIBS+=-lshlwapi -lshell32 -luuid -lole32 -lgdi32 -lsqlite3
 SRCS=dllmain.cpp shellext.cpp
 

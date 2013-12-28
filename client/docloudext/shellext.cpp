@@ -34,6 +34,13 @@ FORMATETC fmte = {CF_HDROP, (DVTARGETDEVICE FAR *)NULL, DVASPECT_CONTENT, -1, TY
 #define IDCMD_ADD		0
 #define IDCMD_REMOVE		1
 
+#define log(str, ...) \
+{ \
+	FILE *fd = fopen("c:\\temp\\log.txt", "a"); \
+	fprintf(fd, str, __VA_ARGS__); \
+	fclose(fd); \
+}
+
 /* Do not check files that do not have a complete path,
  * e.g. c:\a is ok, but not c:
  */
@@ -201,17 +208,17 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 		}
 
 		if (dcfile->filename.length()) {
-			logw(L"Found file [%ld] %s\n", dcfile->id, dcfile->filename.c_str());
+			log("Found file [%ld] %s\n", dcfile->id, dcfile->filename.c_str());
 		} else {
-			logw(L"Could not find file for path %s\n", filename.c_str());
+			log("Could not find file for path %s\n", filename.c_str());
 		}
 		log("Blacklisted: %ld\n", dcfile->blacklisted);
 
-		if (dcfile->id) found++;
-		if (dcfile->blacklisted) blacklisted ++;
+		if (dcfile->id != -1) found++;
+		if (dcfile->blacklisted != 0) blacklisted ++;
 
 		/* Add a pointer to the acutal file/folder the user clicked on */
-		if (dcfile->matches_parent) {
+		if (dcfile->matches_parent || dcfile->id == -1) {
 			dcfile->clear();
 			dcfile->filename = filename.c_str();
 		}
@@ -279,7 +286,7 @@ STDMETHODIMP ShellExt::InvokeCommand(LPCMINVOKECOMMANDINFO pici)
 			continue;
 		if (cmd == IDCMD_ADD) {
 			dcfile->blacklisted = 0;
-			log("add file %s: %d\n", dcfile->filename.c_str());
+			log("add file %s\n", dcfile->filename.c_str());
 		} else if (cmd == IDCMD_REMOVE) {
 			dcfile->blacklisted = 1;
 			log("blacklist file %s\n", (*it)->filename.c_str());
