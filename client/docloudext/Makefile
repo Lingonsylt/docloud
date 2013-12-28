@@ -26,13 +26,13 @@ fileinfo.o: fileinfo_sqlite.cpp
 
 docloudext.dll: $(OBJS) ../shared/reg.o ../shared/sqlite.o ../shared/docloudfile.o
 	@echo "$(CXX) $^ -o $@ $(LIBS) $(LDFLAGS)"
-	@$(CXX) $(LDFLAGS) -o $@ $^ -shared -s -Wl,--subsystem,windows,--out-implib,$@.a $(LIBS)
+	@$(CXX) $(LDFLAGS) -shared -o $@ $^ -Wl,--kill-at,--out-implib,$@.a $(LIBS)
 
 dependencies: $(DEPS)
 
 deps: dependencies
 
 clean:
-	-rm -f $(patsubst %.cpp, %.o, $(SRCS)) $(DEPS) *.dll *.a
+	-rm -f $(patsubst %.cpp, %.o, $(SRCS)) $(DEPS) resource.o *.dll *.a
 
 -include $(OBJS:%.o=%.d)
