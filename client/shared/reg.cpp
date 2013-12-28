@@ -33,7 +33,7 @@ RegSetKeyString(HKEY hkey, const char * subkey_name, const char * value_name, co
 	// Creates the specified registry key. If the key already exists, the 
 	// function opens it. 
 	hr = HRESULT_FROM_WIN32(
-	    RegCreateKeyExW(hkey, widen(subkey_name).c_str(), 0, 
+	    RegCreateKeyEx(hkey, widen(subkey_name).c_str(), 0, 
 		NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &subhkey, NULL));
 
 	if (!SUCCEEDED(hr)) return hr;
@@ -42,9 +42,16 @@ RegSetKeyString(HKEY hkey, const char * subkey_name, const char * value_name, co
 	{
 		// Set the specified value of the key.
 		std::wstring wide = widen(data);
+		const wchar_t *wide_value_name;
+
+		if (value_name == NULL) wide_value_name = NULL;
+		else wide_value_name = widen(value_name).c_str();
 
 		DWORD cbData = lstrlen(wide.c_str()) * sizeof(*(wide.c_str()));
-		hr = HRESULT_FROM_WIN32(RegSetValueExW(subhkey, widen(value_name).c_str(), 0, 
+		wprintf(L"RegSetValueEx(subhkey, %s, 0, REG_SZ, %s, %d)\n",
+		    wide_value_name, wide.c_str(), cbData);
+
+		hr = HRESULT_FROM_WIN32(RegSetValueEx(subhkey, wide_value_name, 0, 
 			REG_SZ, reinterpret_cast<const BYTE *>(wide.c_str()), cbData));
 	}
 
@@ -262,7 +269,7 @@ HRESULT RegisterShellExtContextMenuHandler(
 		
 		// Create the key HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>}
 		hr = StringCchPrintf(szSubkey, ARRAYSIZE(szSubkey), 
-		    L"%S\\shellex\\ContextMenuHandlers\\%S", pszFileType, szCLSID);
+		    L"%S\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
 		if (defaultVal) delete defaultVal;
 
 		if (SUCCEEDED(hr)) {
@@ -314,7 +321,7 @@ HRESULT UnregisterShellExtContextMenuHandler(
 	// If pszFileType starts with '.', try to read the default value of the 
 	// HKCR\<File Type> key which contains the ProgID to which the file type 
 	// is linked.
-	if (*pszFileType == L'.') {
+	if (*pszFileType == '.') {
 
 		defaultVal = RegGetKeyString(HKEY_CLASSES_ROOT, pszFileType, NULL);
 
@@ -327,7 +334,7 @@ HRESULT UnregisterShellExtContextMenuHandler(
 
 	// Remove the HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>} key.
 	hr = StringCchPrintf(szSubkey, ARRAYSIZE(szSubkey), 
-	    L"%S\\shellex\\ContextMenuHandlers\\%S", pszFileType, szCLSID);
+	    L"%S\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
 	if (defaultVal) delete defaultVal;
 
 	if (SUCCEEDED(hr)) {
