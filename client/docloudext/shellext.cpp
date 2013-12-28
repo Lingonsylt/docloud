@@ -34,13 +34,6 @@ FORMATETC fmte = {CF_HDROP, (DVTARGETDEVICE FAR *)NULL, DVASPECT_CONTENT, -1, TY
 #define IDCMD_ADD		0
 #define IDCMD_REMOVE		1
 
-#define log(str, ...) \
-{ \
-	FILE *fd = fopen("c:\\temp\\log.txt", "a"); \
-	fprintf(fd, str, __VA_ARGS__); \
-	fclose(fd); \
-}
-
 /* Do not check files that do not have a complete path,
  * e.g. c:\a is ok, but not c:
  */
