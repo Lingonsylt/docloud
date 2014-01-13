@@ -42,16 +42,18 @@ RegSetKeyString(HKEY hkey, const char * subkey_name, const char * value_name, co
 	{
 		// Set the specified value of the key.
 		std::wstring wide = widen(data);
-		const wchar_t *wide_value_name;
-
-		if (value_name == NULL) wide_value_name = NULL;
-		else wide_value_name = widen(value_name).c_str();
+		std::wstring wide_value_name;
+		const wchar_t *wide_value_ptr;
+		
+		if (value_name == NULL) wide_value_ptr = NULL;
+		else {
+			wide_value_name = widen(value_name);
+			wide_value_ptr = wide_value_name.c_str();
+		}
 
 		DWORD cbData = lstrlen(wide.c_str()) * sizeof(*(wide.c_str()));
-		wprintf(L"RegSetValueEx(subhkey, %s, 0, REG_SZ, %s, %d)\n",
-		    wide_value_name, wide.c_str(), cbData);
 
-		hr = HRESULT_FROM_WIN32(RegSetValueEx(subhkey, wide_value_name, 0, 
+		hr = HRESULT_FROM_WIN32(RegSetValueEx(subhkey, wide_value_ptr, 0, 
 			REG_SZ, reinterpret_cast<const BYTE *>(wide.c_str()), cbData));
 	}
 
