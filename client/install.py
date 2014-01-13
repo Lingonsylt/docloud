@@ -43,9 +43,9 @@ def package(bits="x64"):
     copy(join(shared_path, "schema.sql"), tmppkg_path)
 
     if bits == "x64":
-        dlls = join(shared_path, "libwin32", "gtk3")
-    else:
         dlls = join(shared_path, "libwin64", "gtk3")
+    else:
+        dlls = join(shared_path, "libwin32", "gtk3")
 
     if os.path.exists(dlls) and os.path.isdir(dlls):
         for file in os.listdir(dlls):
