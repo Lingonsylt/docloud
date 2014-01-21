@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import os
 import sqlite3
 from os.path import join
@@ -28,6 +29,7 @@ def package(bits="x64"):
     print("Creating package at: %s" % pkg_path)
     service_path = join(script_path, "service")
     shared_path = join(script_path, "shared")
+    settings_path = join(script_path, "settings")
     docloudext_path = join(script_path, "docloudext")
 
     try:
@@ -40,13 +42,22 @@ def package(bits="x64"):
     copy(join(shared_path, "sqlite3", "sqlite3.dll"), tmppkg_path)
     copy(join(shared_path, "schema.sql"), tmppkg_path)
 
-    dlls = join(shared_path, bits)
+    if bits == "x64":
+        dlls = join(shared_path, "libwin64", "gtk3")
+    else:
+        dlls = join(shared_path, "libwin32", "gtk3")
+
     if os.path.exists(dlls) and os.path.isdir(dlls):
         for file in os.listdir(dlls):
-            copy(join(shared_path, bits, file), tmppkg_path)
+            if os.path.isfile(join(dlls,file)):
+                copy(join(dlls, file), tmppkg_path)
 
     copy(join(docloudext_path, "docloudext.dll"), tmppkg_path)
     copy(join(service_path, "docloud-svc.exe"), tmppkg_path)
+
+    copy(join(settings_path, "docloud-settings.exe"), tmppkg_path)
+    copy(join(settings_path, "main.ui"), tmppkg_path)
+
     _zipdir(tmppkg_path, os.path.join(pkg_path, "pkg.zip"))
     rmtree(tmppkg_path)
     print("Package created at: %s" % pkg_path)
@@ -184,10 +195,11 @@ args = sys.argv[1:]
 if "uninstall" in args:
     uninstall()
 if "package" in args:
-    pkg_path = package()
+    x86 = "--target-x86" in args
+    pkg_path = package("x86" if x86 else"x64")
     if "install" in args:
         install(pkg_path)
 elif "install" in args:
     install(_get_pkg_path("."))
 elif "uninstall" not in args:
-    print("Options are: package, install, uninstall, --killexplorer (-k), --reinstall (-r) --package-path")
+    print("Options are: package, install, uninstall, --target-x64, --target-x86, --killexplorer (-k), --reinstall (-r) --package-path")

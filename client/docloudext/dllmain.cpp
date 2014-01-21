@@ -2,6 +2,7 @@
 #include "docloudext.h"
 #include "shellext.h"
 #include "reg.h"
+#include "common.h"
 
 
 // {BFD98515-CD74-48A4-98E2-13D209E3EE4F}
@@ -14,12 +15,12 @@ const CLSID CLSID_doCloudExt =
 
 //{ 0xBFD98515, 0xCD74, 0x48A4, { 0x98, 0xE2, 0x13, 0xD2, 0x09, 0xE3, 0xEE, 0x4F } };
 //
-const wchar_t *installContextHandlers[] = {
-	L".doc",
-	L".docx",
-	L".pdf",
-	L"Folder",
-	L"Directory",
+const char *installContextHandlers[] = {
+	".doc",
+	".docx",
+	".pdf",
+	"Folder",
+	"Directory",
 	NULL
 };
 
@@ -31,11 +32,7 @@ long        g_cDllRef   = 0;
 extern "C" {
 #endif
 
-#ifdef __mingw
 #define DLLEXPORT __declspec(dllexport)
-#else
-#define DLLEXPORT 
-#endif
 #define STDAPI_EXPORTED EXTERN_C DLLEXPORT HRESULT STDAPICALLTYPE
 
 //EXTERN_C DLLEXPORT BOOL STDAPICALLTYPE DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved);
@@ -48,6 +45,75 @@ STDAPI_EXPORTED DllUnregisterServer(void);
 }
 #endif
 
+
+
+HRESULT
+DllRegisterServerCPP(void)
+{
+	HRESULT hr;
+
+	wchar_t szModule[MAX_PATH];
+	if (GetModuleFileName(g_hInst, szModule, ARRAYSIZE(szModule)) == 0)
+	{
+		hr = HRESULT_FROM_WIN32(GetLastError());
+		return hr;
+	}
+
+	// Register the component.
+	hr = RegisterInprocServer(narrow(szModule).c_str(), CLSID_doCloudExt, 
+	    "doCloud.Ext Class", 
+	    "Apartment");
+	if (SUCCEEDED(hr))
+	{
+		// Register the context menu handler. The context menu handler is 
+		// associated with the .cpp file class.
+		for (int i = 0; installContextHandlers[i] != NULL; i++)
+			hr = RegisterShellExtContextMenuHandler(installContextHandlers[i], CLSID_doCloudExt, "doCloud.Ext");
+	}
+
+	hr = RegisterShellOverlayIconIdentifier(CLSID_doCloudExt, "doCloud");
+	return hr;
+}
+
+
+HRESULT
+DllUnregisterServerCPP(void)
+{
+	HRESULT hr = S_OK;
+
+	wchar_t szModule[MAX_PATH];
+	if (GetModuleFileName(g_hInst, szModule, ARRAYSIZE(szModule)) == 0)
+	{
+		hr = HRESULT_FROM_WIN32(GetLastError());
+		return hr;
+	}
+
+	// Unregister the component.
+	hr = UnregisterInprocServer(CLSID_doCloudExt);
+	if (SUCCEEDED(hr))
+	{
+		// Unregister the context menu handler.
+		for (int i = 0; installContextHandlers[i] != NULL; i++)
+			hr = UnregisterShellExtContextMenuHandler(installContextHandlers[i], CLSID_doCloudExt);
+	}
+
+	hr = UnregisterShellOverlayIconIdentifier("doCloud");
+	return hr;
+}
+
+extern "C" {
+
+STDAPI_EXPORTED
+DllRegisterServer(void)
+{
+	return DllRegisterServerCPP();
+}
+STDAPI_EXPORTED
+DllUnregisterServer(void)
+{
+	return DllUnregisterServerCPP();
+}
+
 BOOL APIENTRY
 DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 {
@@ -58,7 +124,7 @@ DllMain(HMODULE hModule, DWORD dwReason, LPVOID lpReserved)
 		// path of the DLL to register the component.
 		g_hInst = hModule;
 		DisableThreadLibraryCalls(hModule);
-        break;
+	break;
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
 	case DLL_PROCESS_DETACH:
@@ -88,60 +154,8 @@ DllCanUnloadNow(void)
 	return g_cDllRef > 0 ? S_FALSE : S_OK;
 }
 
-
-STDAPI_EXPORTED
-DllRegisterServer(void)
-{
-	HRESULT hr;
-
-	wchar_t szModule[MAX_PATH];
-	if (GetModuleFileName(g_hInst, szModule, ARRAYSIZE(szModule)) == 0)
-	{
-		hr = HRESULT_FROM_WIN32(GetLastError());
-		return hr;
-	}
-
-	// Register the component.
-	hr = RegisterInprocServer(szModule, CLSID_doCloudExt, 
-	    L"doCloud.Ext Class", 
-	    L"Apartment");
-	if (SUCCEEDED(hr))
-	{
-		// Register the context menu handler. The context menu handler is 
-		// associated with the .cpp file class.
-		for (int i = 0; installContextHandlers[i] != NULL; i++)
-			hr = RegisterShellExtContextMenuHandler(installContextHandlers[i], CLSID_doCloudExt, L"doCloud.Ext");
-	}
-
-	hr = RegisterShellOverlayIconIdentifier(CLSID_doCloudExt, L"doCloud");
-	return hr;
 }
 
-
-STDAPI_EXPORTED
-DllUnregisterServer(void)
-{
-	HRESULT hr = S_OK;
-
-	wchar_t szModule[MAX_PATH];
-	if (GetModuleFileName(g_hInst, szModule, ARRAYSIZE(szModule)) == 0)
-	{
-		hr = HRESULT_FROM_WIN32(GetLastError());
-		return hr;
-	}
-
-	// Unregister the component.
-	hr = UnregisterInprocServer(CLSID_doCloudExt);
-	if (SUCCEEDED(hr))
-	{
-		// Unregister the context menu handler.
-		for (int i = 0; installContextHandlers[i] != NULL; i++)
-			hr = UnregisterShellExtContextMenuHandler(installContextHandlers[i], CLSID_doCloudExt);
-	}
-
-	hr = UnregisterShellOverlayIconIdentifier(L"doCloud");
-	return hr;
-}
 
 /* 
 ClassFactory - pass back a COM object to caller 

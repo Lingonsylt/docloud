@@ -2,59 +2,36 @@
 #include <stdio.h>
 #include "sqlite.h"
 #include "reg.h"
-
-#ifdef WIN32
-#define swprintf _snwprintf
-#endif
+#include "config.h"
 
 struct sqlite3 *sqlite_db = NULL;
 
-const wchar_t *
-sqlite_get_db_path16()
-{
-	static wchar_t install_path16[MAX_PATH];
-	static wchar_t db_path16[MAX_PATH];
-	static int found_path = 0;
-	HRESULT hr;
-
-	if (found_path) return db_path16;
-
-	/* Set default value for subkey */
-	hr = RegGetKeyString(HKEY_LOCAL_MACHINE,
-	    L"SOFTWARE\\doCloud\\doCloud", L"install_path",
-	    install_path16, sizeof(install_path16));
-
-    swprintf(db_path16, sizeof(db_path16), L"%s/db.sqlite", install_path16);
-
-	wprintf(L"Path: %s\n", db_path16);
-	if (SUCCEEDED(hr)) {
-		found_path = 1;
-		return db_path16;
-	}
-
-	/* Key not set! Try to fix it! */
-	/* FIXME! Get proper path (to executable maybe?)
-	 * or should we even do this?
-	 */
-	return NULL;
-}
+#define DB_NAME "\\db.sqlite"
 
 const char *
 sqlite_get_db_path()
 {
-	static char db_path[MAX_PATH];
-	const wchar_t *db_path16;
-	HRESULT hr;
+	static char *db_path = NULL;
 
+	if (db_path) return db_path;
 
-	db_path16 = sqlite_get_db_path16();
-	if (db_path16 == NULL)
-		return NULL;
+	std::string install_path;
+	int len;
 
-	WideCharToMultiByte(CP_UTF8, 0, db_path16, -1,
-		db_path, sizeof(db_path), NULL, NULL);
+	install_path = config::getStr("install_path");
+	install_path += DB_NAME;
+
+	len = install_path.length() + 1;
+	db_path = new char[len];
+	strcpy_s(db_path, len, install_path.c_str());
+
+	printf("Path: %s\n", db_path);
 	return db_path;
 
+	/* If key is not set! Try to fix it? */
+	/* FIXME! Get proper path (to executable maybe?)
+	 * or should we even do this?
+	 */
 }
 
 int

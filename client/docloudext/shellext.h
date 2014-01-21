@@ -3,6 +3,7 @@
 #include <vector>
 #include <windows.h>
 #include <shlobj.h>     // For IShellExtInit and IContextMenu and IShellIconOverlayIdentifier
+#include "docloudfile.h"
 
 class ShellExt : public IShellExtInit, public IContextMenu, public IShellIconOverlayIdentifier
 {
@@ -36,7 +37,7 @@ class ShellExt : public IShellExtInit, public IContextMenu, public IShellIconOve
 		long m_cRef;
 		wchar_t *moduleFilename;
 		int nFiles;
-		std::vector<struct file_info> v_files;
+		std::vector<doCloudFile *> v_files;
 
 		// reference to dataobject
 		LPDATAOBJECT dataObj;

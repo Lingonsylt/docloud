@@ -7,6 +7,7 @@
 #include <string>
 #include "sqlite.h"
 #include "dirwatcher.h"
+#include "common.h"
 
 /* strsafe.h-wrapper for mingw, in order to suppress
  * warnings due to lack of strsafe.lib
@@ -65,30 +66,30 @@ dirWatcher::init() {
 	return 0;
 }
 
-int dirWatcher::addDirectory(const wchar_t *path)
+int dirWatcher::addDirectory(const char *path)
 {
 	HANDLE h;
 	directory *dir;
-	std::wstring wstr;
+	std::string str;
 
 	if (hIOCP == NULL)
 		this->init();
 
 
 	/* First, check if we're watching a subdirectory to this directory */
-	wprintf(L"Trying to add path %s\n", path);
-	wstr = path;
+	printf("Trying to add path %s\n", path);
+	str = path;
 	AcquireSRWLockShared(&dirLock);
 	std::map<unsigned long long, directory *>::iterator m;
 	for (m = dirs.begin(); m != dirs.end(); m++) {
-		if (wstr.find(m->second->path,0) == 0) {
+		if (str.find(m->second->path,0) == 0) {
 			/* We're already watching either this directory or parent */
-			wprintf(L"Already watching parent %s, skipping %s\n", m->second->path.c_str(), path);
+			printf("Already watching parent %s, skipping %s\n", m->second->path.c_str(), path);
 			ReleaseSRWLockShared(&dirLock);
 			return 0;
-		} else if(m->second->path.find(wstr, 0) == 0) {
+		} else if(m->second->path.find(str, 0) == 0) {
 			/* We're the parent of this directory! */
-			wprintf(L"We're (%s) parent of %s, removing it\n", path, m->second->path.c_str());
+			printf("We're (%s) parent of %s, removing it\n", path, m->second->path.c_str());
 			ReleaseSRWLockShared(&dirLock);
 
 			AcquireSRWLockExclusive(&dirLock);
@@ -104,7 +105,7 @@ int dirWatcher::addDirectory(const wchar_t *path)
 	}
 	ReleaseSRWLockShared(&dirLock);
 
-	h = CreateFile(path,
+	h = CreateFile(widen(path).c_str(),
 	    FILE_LIST_DIRECTORY,
 	    FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 	    NULL,
@@ -153,7 +154,7 @@ int dirWatcher::addDirectory(const wchar_t *path)
 	return 0;
 }
 
-int dirWatcher::remDirectory(const wchar_t *path)
+int dirWatcher::remDirectory(const char *path)
 {
 	std::map<unsigned long long, directory *>::iterator it;
 
@@ -176,8 +177,8 @@ int dirWatcher::remDirectory(const wchar_t *path)
 int dirWatcher::loadDirList()
 {
 	struct sqlite3_stmt *stmt;
-	const wchar_t *filename;
-	std::wstring dirpath;
+	const char *filename;
+	std::string dirpath;
 	int rv;
 
 	if (sqlite_connect() == -1)
@@ -194,13 +195,13 @@ int dirWatcher::loadDirList()
 	}
 
 	while ((rv = sqlite3_step(stmt)) == SQLITE_ROW) {
-		filename = (const wchar_t*)sqlite3_column_text16(stmt, 0);
+		filename = (const char *)sqlite3_column_text(stmt, 0);
 
 		dirpath = filename;
-		if (PathIsDirectory(filename)) {
+		if (PathIsDirectory(widen(filename).c_str())) {
 			addDirectory(filename);
 		} else {
-			dirpath.erase(dirpath.find_last_of(L"\\/"));
+			dirpath.erase(dirpath.find_last_of("\\/"));
 			addDirectory(dirpath.c_str());
 		}
 	}
@@ -213,7 +214,7 @@ int
 dirWatcher::watch()
 {
 	unsigned long nb;
-	unsigned long long key;
+	ULONG_PTR key;
 	OVERLAPPED *overlappedptr;
 	directory *dir;
 
@@ -246,12 +247,18 @@ dirWatcher::watch()
 		while (pIter)
 		{
 			pIter->FileName[pIter->FileNameLength / sizeof(TCHAR)] = 0;
+			std::string narrow_filename = narrow(pIter->FileName);
+
+			/* Skip unknown filetypes */
+			if (!docloud_is_correct_filetype(narrow_filename.c_str()))
+				continue;
 
 			/* Tell the workers we've found something */
-			std::wstring *wstr = new std::wstring(dir->path);
-			wstr->append(L"\\");
-			wstr->append(pIter->FileName);
-			PostQueuedCompletionStatus(updatePort, pIter->Action, (ULONG_PTR)wstr, NULL);
+			std::string *str = new std::string(dir->path);
+			str->append("\\");
+			str->append(narrow_filename);
+
+			PostQueuedCompletionStatus(updatePort, pIter->Action, (ULONG_PTR)str, NULL);
 
 			if(pIter->NextEntryOffset == 0UL)
 				break;	
@@ -290,22 +297,34 @@ int
 dirWatcher::work()
 {
 	DWORD action;
-	std::wstring *path;
+	std::string *path;
 	ULONG_PTR ptr;
 	OVERLAPPED *overlapped;
+	doCloudFile *file;
 
 	for (;;) {
 		HRESULT ret = GetQueuedCompletionStatus(updatePort, &action, &ptr, &overlapped, WORKER_TIMEOUT);
 		if (ret == false) {
 			debug_windows(L"GetQueuedCompletionStatus():%s\n");
-			if (overlapped == NULL)
-				wprintf(L"Did not dequeue packet!\n");
+			if (overlapped == NULL) {
+				/* We just had a timeout -
+				 * FIXME! check if we should walk through the tree and look
+				 * for updated files
+				 */
+
+			}
 			continue;
 		}
-		path = (std::wstring*)ptr;
+		path = (std::string*)ptr;
 
 		if (path == NULL) continue;
 
-		wprintf(L"[worker] Updated path %s (%d)\n", path->c_str(), action);
+		printf("[worker] Updated path %s (%d)\n", path->c_str(), action);
+		file = new doCloudFile;
+		file->getFromPath(path->c_str());
+
+		if (file->id != -1) {
+			printf("[worker] this file is one of ours!\n");
+		}
 	}
 }

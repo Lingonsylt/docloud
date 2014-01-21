@@ -2,13 +2,16 @@
 #define DIRWATCHER_H
 #include <string>
 #include <map>
+#include <vector>
+#include "docloudfile.h"
 
 typedef struct t_directory {
-	std::wstring path;
+	std::string path;
 	HANDLE handle;
 	FILE_NOTIFY_INFORMATION *buffer;
 	OVERLAPPED overlapped;
 	unsigned long long key;
+	std::vector<doCloudFile *> files;
 
 	public:
 		t_directory(): buffer(NULL), key(0), handle(NULL) { };
@@ -26,8 +29,12 @@ class dirWatcher {
 		dirWatcher();
 		~dirWatcher();
 		int init();
-		int addDirectory(const wchar_t *dir);
-		int remDirectory(const wchar_t *dir);
+		int addDirectory(const char *dir);
+		int remDirectory(const char *dir);
+
+		int addFile(doCloudFile *file);
+		int remFile(doCloudFile *file);
+
 		int loadDirList();
 
 		int watch();

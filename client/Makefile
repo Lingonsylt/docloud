@@ -1,12 +1,14 @@
 .PHONY: all clean
+-include config.mk
 
 all:
-	-cd shared && make $@
-	-cd docloudext && make $@
-	-cd service && make $@
-
+	@$(MAKE) $(MFLAGS) $(MAKECMDGOALS) -C shared
+	@$(MAKE) $(MFLAGS) $(MAKECMDGOALS) -C docloudext
+	@$(MAKE) $(MFLAGS) $(MAKECMDGOALS) -C service
+	@$(MAKE) $(MFLAGS) $(MAKECMDGOALS) -C settings
 clean:
-	-cd shared && make $@
-	-cd docloudext && make $@
-	-cd service && make $@
+	@$(MAKE) $(MFLAGS) $(MAKECMDGOALS) -C shared
+	@$(MAKE) $(MFLAGS) $(MAKECMDGOALS) -C docloudext
+	@$(MAKE) $(MFLAGS) $(MAKECMDGOALS) -C service
+	@$(MAKE) $(MFLAGS) $(MAKECMDGOALS) -C settings
 

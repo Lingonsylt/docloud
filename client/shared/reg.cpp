@@ -20,10 +20,12 @@ extern "C" {
 #endif
 #endif
 
+#include "common.h"
 #include "reg.h"
 
+
 HRESULT
-RegSetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PCWSTR data)
+RegSetKeyString(HKEY hkey, const char * subkey_name, const char * value_name, const char * data)
 {
 	HRESULT hr;
 	HKEY subhkey = NULL;
@@ -31,7 +33,7 @@ RegSetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PCWSTR data)
 	// Creates the specified registry key. If the key already exists, the 
 	// function opens it. 
 	hr = HRESULT_FROM_WIN32(
-	    RegCreateKeyEx(hkey, subkey_name, 0, 
+	    RegCreateKeyEx(hkey, widen(subkey_name).c_str(), 0, 
 		NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE, NULL, &subhkey, NULL));
 
 	if (!SUCCEEDED(hr)) return hr;
@@ -39,30 +41,78 @@ RegSetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PCWSTR data)
 	if (data != NULL)
 	{
 		// Set the specified value of the key.
-		DWORD cbData = lstrlen(data) * sizeof(*data);
-		hr = HRESULT_FROM_WIN32(RegSetValueEx(subhkey, value_name, 0, 
-			REG_SZ, reinterpret_cast<const BYTE *>(data), cbData));
+		std::wstring wide = widen(data);
+		std::wstring wide_value_name;
+		const wchar_t *wide_value_ptr;
+		
+		if (value_name == NULL) wide_value_ptr = NULL;
+		else {
+			wide_value_name = widen(value_name);
+			wide_value_ptr = wide_value_name.c_str();
+		}
+
+		DWORD cbData = lstrlen(wide.c_str()) * sizeof(*(wide.c_str()));
+
+		hr = HRESULT_FROM_WIN32(RegSetValueEx(subhkey, wide_value_ptr, 0, 
+			REG_SZ, reinterpret_cast<const BYTE *>(wide.c_str()), cbData));
 	}
 
 	RegCloseKey(subhkey);
 	return hr;
 }
 
+char *
+RegGetKeyString(HKEY hkey, const char * subkey_name, const char * value_name)
+{
+	HRESULT hr;
+	HKEY subhkey = NULL;
+	DWORD sz;
+	PWSTR str;
+
+	// Try to open the specified registry key. 
+	hr = HRESULT_FROM_WIN32(RegOpenKeyEx(hkey, widen(subkey_name).c_str(), 0, 
+		KEY_READ, &subhkey));
+
+	if (!SUCCEEDED(hr)) return NULL;
+
+	// Get the data for the specified value name.
+	hr = HRESULT_FROM_WIN32(RegQueryValueEx(subhkey, widen(value_name).c_str(), NULL, NULL, NULL, &sz));
+	if (!SUCCEEDED(hr)) {
+		return NULL;
+	}
+
+	str = new wchar_t[sz];
+	hr = HRESULT_FROM_WIN32(RegQueryValueEx(subhkey, widen(value_name).c_str(), NULL, NULL,
+		reinterpret_cast<LPBYTE>(str), &sz));
+	if (!SUCCEEDED(hr)) {
+		delete str;
+		return NULL;
+	}
+
+	RegCloseKey(subhkey);
+
+	const char *narrow_str  = narrow(str).c_str();
+	sz = strlen(narrow_str) + 1;
+	char *output_str = new char[sz];
+	strcpy_s(output_str, sz, narrow_str);
+	return output_str;
+}
+
 
 HRESULT
-RegGetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PWSTR data, DWORD data_sz)
+RegGetKeyString(HKEY hkey, const char * subkey_name, const char * value_name, char *data, DWORD data_sz)
 {
 	HRESULT hr;
 	HKEY subhkey = NULL;
 
 	// Try to open the specified registry key. 
-	hr = HRESULT_FROM_WIN32(RegOpenKeyEx(hkey, subkey_name, 0, 
+	hr = HRESULT_FROM_WIN32(RegOpenKeyEx(hkey, widen(subkey_name).c_str(), 0, 
 		KEY_READ, &subhkey));
 
 	if (!SUCCEEDED(hr)) return hr;
 
 	// Get the data for the specified value name.
-	hr = HRESULT_FROM_WIN32(RegQueryValueEx(subhkey, value_name, NULL, 
+	hr = HRESULT_FROM_WIN32(RegQueryValueEx(subhkey, widen(value_name).c_str(), NULL, 
 		NULL, reinterpret_cast<LPBYTE>(data), &data_sz));
 
 	RegCloseKey(subhkey);
@@ -97,8 +147,8 @@ RegGetKeyString(HKEY hkey, PCWSTR subkey_name, PCWSTR value_name, PWSTR data, DW
 //      }
 //   }
 //
-HRESULT RegisterInprocServer(PCWSTR pszModule, const CLSID& clsid, 
-    PCWSTR pszFriendlyName, PCWSTR pszThreadModel)
+HRESULT RegisterInprocServer(const char * pszModule, const CLSID& clsid, 
+    const char * pszFriendlyName, const char * pszThreadModel)
 {
 	if (pszModule == NULL || pszThreadModel == NULL)
 		return E_INVALIDARG;
@@ -113,7 +163,7 @@ HRESULT RegisterInprocServer(PCWSTR pszModule, const CLSID& clsid,
 	// Create the HKCR\CLSID\{<CLSID>} key.
 	hr = StringCchPrintf(szSubkey, ARRAYSIZE(szSubkey), L"CLSID\\%s", szCLSID);
 	if (SUCCEEDED(hr)) {
-		hr = RegSetKeyString(HKEY_CLASSES_ROOT, szSubkey, NULL, pszFriendlyName);
+		hr = RegSetKeyString(HKEY_CLASSES_ROOT, narrow(szSubkey).c_str(), NULL, pszFriendlyName);
 		// Create the HKCR\CLSID\{<CLSID>}\InprocServer32 key.
 		if (SUCCEEDED(hr)) {
 			hr = StringCchPrintf(szSubkey, ARRAYSIZE(szSubkey), 
@@ -122,12 +172,12 @@ HRESULT RegisterInprocServer(PCWSTR pszModule, const CLSID& clsid,
 			{
 				// Set the default value of the InprocServer32 key to the 
 				// path of the COM module.
-				hr = RegSetKeyString(HKEY_CLASSES_ROOT,szSubkey, NULL, pszModule);
+				hr = RegSetKeyString(HKEY_CLASSES_ROOT, narrow(szSubkey).c_str(), NULL, pszModule);
 				if (SUCCEEDED(hr))
 				{
 					// Set the threading model of the component.
-					hr = RegSetKeyString(HKEY_CLASSES_ROOT,szSubkey,
-					    L"ThreadingModel", pszThreadModel);
+					hr = RegSetKeyString(HKEY_CLASSES_ROOT, narrow(szSubkey).c_str(),
+					    "ThreadingModel", pszThreadModel);
 				}
 			}
 		}
@@ -194,7 +244,7 @@ HRESULT UnregisterInprocServer(const CLSID& clsid)
 //   }
 //
 HRESULT RegisterShellExtContextMenuHandler(
-    PCWSTR pszFileType, const CLSID& clsid, PCWSTR pszFriendlyName)
+    const char * pszFileType, const CLSID& clsid, const char * pszFriendlyName)
 {
 	if (pszFileType == NULL)
 		return E_INVALIDARG;
@@ -210,30 +260,31 @@ HRESULT RegisterShellExtContextMenuHandler(
 	// HKCR\<File Type> key which contains the ProgID to which the file type 
 	// is linked.
 	if (*pszFileType == L'.') {
-		wchar_t szDefaultVal[260];
-		hr = RegGetKeyString(HKEY_CLASSES_ROOT, pszFileType, NULL, szDefaultVal,
-		    sizeof(szDefaultVal));
+		char *defaultVal;
+		defaultVal =  RegGetKeyString(HKEY_CLASSES_ROOT, pszFileType, NULL);
 
 		// If the key exists and its default value is not empty, use the 
 		// ProgID as the file type.
-		if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0') {
-			pszFileType = szDefaultVal;
+		if (defaultVal != NULL && defaultVal[0] != L'\0') {
+			pszFileType = defaultVal;
 		}
 		
 		// Create the key HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>}
 		hr = StringCchPrintf(szSubkey, ARRAYSIZE(szSubkey), 
-		    L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
+		    L"%S\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
+		if (defaultVal) delete defaultVal;
+
 		if (SUCCEEDED(hr)) {
 			// Set the default value of the key.
-			hr = RegSetKeyString(HKEY_CLASSES_ROOT, szSubkey, NULL, pszFriendlyName);
+			hr = RegSetKeyString(HKEY_CLASSES_ROOT, narrow(szSubkey).c_str(), NULL, pszFriendlyName);
 		}
 	} else {
 		// Create the key HKCR\<File Type>\shellex\ContextMenuHandlers\<Friendly name> = {<CLSID>}
 		hr = StringCchPrintf(szSubkey, ARRAYSIZE(szSubkey), 
-		    L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, pszFriendlyName);
+		    L"%S\\shellex\\ContextMenuHandlers\\%S", pszFileType, pszFriendlyName);
 		if (SUCCEEDED(hr)) {
 			// Set the default value of the key.
-			hr = RegSetKeyString(HKEY_CLASSES_ROOT, szSubkey, NULL, szCLSID);
+			hr = RegSetKeyString(HKEY_CLASSES_ROOT, narrow(szSubkey).c_str(), NULL, narrow(szCLSID).c_str());
 		}
 	}
 
@@ -256,7 +307,7 @@ HRESULT RegisterShellExtContextMenuHandler(
 //   HKCR\<File Type>\shellex\ContextMenuHandlers in the registry.
 //
 HRESULT UnregisterShellExtContextMenuHandler(
-    PCWSTR pszFileType, const CLSID& clsid)
+    const char * pszFileType, const CLSID& clsid)
 {
 	if (pszFileType == NULL)
 		return E_INVALIDARG;
@@ -267,25 +318,27 @@ HRESULT UnregisterShellExtContextMenuHandler(
 	StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
 
 	wchar_t szSubkey[MAX_PATH];
+	char *defaultVal = NULL;
 
 	// If pszFileType starts with '.', try to read the default value of the 
 	// HKCR\<File Type> key which contains the ProgID to which the file type 
 	// is linked.
-	if (*pszFileType == L'.') {
-		wchar_t szDefaultVal[260];
-		hr = RegGetKeyString(HKEY_CLASSES_ROOT, pszFileType, NULL, szDefaultVal,
-		    sizeof(szDefaultVal));
+	if (*pszFileType == '.') {
+
+		defaultVal = RegGetKeyString(HKEY_CLASSES_ROOT, pszFileType, NULL);
 
 		// If the key exists and its default value is not empty, use the 
 		// ProgID as the file type.
-		if (SUCCEEDED(hr) && szDefaultVal[0] != L'\0') {
-			pszFileType = szDefaultVal;
+		if (defaultVal != NULL && defaultVal[0] != '\0') {
+			pszFileType = defaultVal;
 		}
 	}
 
 	// Remove the HKCR\<File Type>\shellex\ContextMenuHandlers\{<CLSID>} key.
 	hr = StringCchPrintf(szSubkey, ARRAYSIZE(szSubkey), 
-	    L"%s\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
+	    L"%S\\shellex\\ContextMenuHandlers\\%s", pszFileType, szCLSID);
+	if (defaultVal) delete defaultVal;
+
 	if (SUCCEEDED(hr)) {
 		hr = HRESULT_FROM_WIN32(SHDeleteKey(HKEY_CLASSES_ROOT, szSubkey));
 	}
@@ -295,29 +348,29 @@ HRESULT UnregisterShellExtContextMenuHandler(
 
 
 HRESULT
-RegisterShellOverlayIconIdentifier(const CLSID& clsid, PCWSTR name)
+RegisterShellOverlayIconIdentifier(const CLSID& clsid, const char * name)
 {
-	HRESULT hr;
 	wchar_t szCLSID[MAX_PATH];
-	wchar_t subkey[MAX_PATH];
+	char subkey[MAX_PATH];
+	int ret;
 
 	StringFromGUID2(clsid, szCLSID, ARRAYSIZE(szCLSID));
 
-	hr = StringCchPrintf(subkey, ARRAYSIZE(subkey),
-	    L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ShellIconOverlayIdentifiers\\%s",
+	ret = snprintf(subkey, sizeof(subkey),
+	    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ShellIconOverlayIdentifiers\\%s",
 	    name);
-	if (!SUCCEEDED(hr)) return hr;
+	if (ret <= 0) return 0;
 	/* Set default value for subkey */
-	return RegSetKeyString(HKEY_LOCAL_MACHINE, subkey, NULL, szCLSID);
+	return RegSetKeyString(HKEY_LOCAL_MACHINE, subkey, NULL, narrow(szCLSID).c_str());
 }
 
 HRESULT
-UnregisterShellOverlayIconIdentifier(PCWSTR name)
+UnregisterShellOverlayIconIdentifier(const char * name)
 {
 	HRESULT hr;
 	wchar_t subkey[MAX_PATH];
 	hr = StringCchPrintf(subkey, ARRAYSIZE(subkey),
-	    L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ShellIconOverlayIdentifiers\\%s",
+	    L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ShellIconOverlayIdentifiers\\%S",
 	    name);
 	if (!SUCCEEDED(hr)) return hr;
 	return HRESULT_FROM_WIN32(SHDeleteKey(HKEY_LOCAL_MACHINE, subkey));
