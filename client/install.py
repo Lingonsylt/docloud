@@ -92,6 +92,7 @@ def install(pkg_path):
     schema_path = join(tmppkg_path, "schema.sql") \
         if os.path.exists(join(tmppkg_path, "schema.sql")) else join(tmppkg_path, "shared", "schema.sql")
 
+    print("Installing db-schema")
     try:
         conn = sqlite3.connect(db_path)
     except Exception as e:
