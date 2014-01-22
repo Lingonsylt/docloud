@@ -1,11 +1,19 @@
 #!/usr/bin/python3
+import sys
+if sys.version_info.major < 3:
+    sys.stdout.write(u"USE PYTHON 3!!!!!!!!\n")
+    sys.exit()
 import os
 import sqlite3
-from os.path import join
+from os.path import join, splitext
 from shutil import copy, rmtree, copytree
-import sys
+
 import time
 import subprocess
+try:
+    import winreg
+except ImportError:
+    winreg = None
 
 if sys.version_info < (3, 3, 0):
     FileNotFoundError = OSError
@@ -48,9 +56,10 @@ def package(bits="x64"):
         dlls = join(shared_path, "libwin32", "gtk3")
 
     if os.path.exists(dlls) and os.path.isdir(dlls):
-        for file in os.listdir(dlls):
-            if os.path.isfile(join(dlls,file)):
-                copy(join(dlls, file), tmppkg_path)
+        for root, dirs, files in os.walk(dlls):
+            for file in files:
+                if splitext(file)[1] == ".dll":
+                    copy(join(dlls, root, file), join(tmppkg_path, file))
 
     copy(join(docloudext_path, "docloudext.dll"), tmppkg_path)
     copy(join(service_path, "docloud-svc.exe"), tmppkg_path)
@@ -68,7 +77,7 @@ def _zipdir(directory, zip_path):
     with zipfile.ZipFile(zip_path, 'w') as zipf:
         for root, dirs, files in os.walk(directory):
             for file in files:
-                zipf.write(os.path.join(root, file), file)
+                zipf.write(join(root, file), file)
 
 def _unzip(zip_path, destination):
     with zipfile.ZipFile(zip_path, "r") as zipf:
@@ -138,7 +147,6 @@ def install(pkg_path):
     os.system(join(install_path, "docloud-svc.exe"))
 
 def _get_registry_install_path():
-    import winreg
     docloud_key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, "Software\\Docloud\\Docloud")
     try:
         install_path, no = winreg.QueryValueEx(docloud_key, "install_path")
@@ -147,12 +155,10 @@ def _get_registry_install_path():
         return None
 
 def _set_registry_install_path(install_path):
-    import winreg
     docloud_key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, "Software\\Docloud\\Docloud")
     winreg.SetValueEx(docloud_key, "install_path", 0, winreg.REG_SZ, install_path)
 
 def _delete_registry_keys():
-    import winreg
     docloud_key = winreg.CreateKey(winreg.HKEY_LOCAL_MACHINE, "Software\\Docloud\\Docloud")
     winreg.DeleteKey(docloud_key, "")
 
@@ -167,7 +173,7 @@ def uninstall(new_path=None):
             print("Unloading dll %s" % docloudext_dll)
             os.system("regsvr32 /s /u %s" % docloudext_dll)
         os.system("taskkill /f /im explorer.exe")
-        os.system("taskkill /f /im doucloud-svc.exe")
+        os.system("taskkill /f /im docloud-svc.exe")
         time.sleep(0.5)
 
         if os.path.exists(install_path) and os.path.isdir(install_path):
