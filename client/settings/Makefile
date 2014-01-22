@@ -20,6 +20,27 @@ xc-win64: export CXXFLAGS+=-I../shared/libwin64/gtk3/include/atk-1.0
 xc-win64: export CXXFLAGS+=-I../shared/libwin64/gtk3/lib/glib-2.0/include
 xc-win64: export LIBS+=-lgtk-3 -lgdk-3 -lglib-2.0 -lgobject-2.0
 
+# Setup paths to all needed libraries for cross-compiling
+win32: export LDFLAGS+=-L../shared/libwin32/gtk3/lib
+win32: export CXXFLAGS+=-I../shared/libwin32/gtk3/include/gtk-3.0
+win32: export CXXFLAGS+=-I../shared/libwin32/gtk3/include/glib-2.0
+win32: export CXXFLAGS+=-I../shared/libwin32/gtk3/include/pango-1.0
+win32: export CXXFLAGS+=-I../shared/libwin32/gtk3/include/cairo
+win32: export CXXFLAGS+=-I../shared/libwin32/gtk3/include/gdk-pixbuf-2.0
+win32: export CXXFLAGS+=-I../shared/libwin32/gtk3/include/atk-1.0
+win32: export CXXFLAGS+=-I../shared/libwin32/gtk3/lib/glib-2.0/include
+win32: export LIBS+=-lgtk-3 -lgdk-3 -lglib-2.0 -lgobject-2.0
+
+win64: export LDFLAGS+=-L../shared/libwin64/gtk3/lib
+win64: export CXXFLAGS+=-I../shared/libwin64/gtk3/include/gtk-3.0
+win64: export CXXFLAGS+=-I../shared/libwin64/gtk3/include/glib-2.0
+win64: export CXXFLAGS+=-I../shared/libwin64/gtk3/include/pango-1.0
+win64: export CXXFLAGS+=-I../shared/libwin64/gtk3/include/cairo
+win64: export CXXFLAGS+=-I../shared/libwin64/gtk3/include/gdk-pixbuf-2.0
+win64: export CXXFLAGS+=-I../shared/libwin64/gtk3/include/atk-1.0
+win64: export CXXFLAGS+=-I../shared/libwin64/gtk3/lib/glib-2.0/include
+win64: export LIBS+=-lgtk-3 -lgdk-3 -lglib-2.0 -lgobject-2.0
+
 -include ../config.mk
 
 # Note - our SRW-locks in dirwatcher.cpp requires Vista or later!,
