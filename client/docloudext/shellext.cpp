@@ -172,6 +172,7 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 	/* Build list of files, with info */
 	int found = 0;
 	int blacklisted = 0;
+	int show_flag = 0;
 
 	std::vector<doCloudFile *>::iterator it;
 	for (it = v_files.begin(); it != v_files.end(); it ++)
@@ -196,10 +197,18 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 		dcfile = new doCloudFile;
 		if ((ret = dcfile->getFromPath(filename.c_str())) == -1) {
 			log("doCloudFile.getFromPath(%s): %d\n", filename.c_str(), ret);
+
+			/* We're not watching this, so check what filetype it is */
+			if (docloud_is_correct_filetype(filename.c_str()) ||
+			    PathIsDirectory(wide_filename) != FALSE) {
+				show_flag = 1;
+			}
 			delete dcfile;
 			continue;
 		}
 
+		/* We're watching this file, so add it */
+		show_flag = 1;
 		if (dcfile->filename.length()) {
 			log("Found file [%ld] %s\n", dcfile->id, dcfile->filename.c_str());
 		} else {
@@ -217,6 +226,9 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 		}
 		v_files.push_back(dcfile);
 	}
+
+	if (!show_flag)
+		return MAKE_HRESULT(SEVERITY_SUCCESS, 0, USHORT(idCmd - idCmdFirst));
 
 	if (found && !blacklisted) {
 		if (nFiles > 1) text = "Remove files from doCloud";
