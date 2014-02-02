@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import sys
 if sys.version_info.major < 3:
-    sys.stdout.write(u"USE PYTHON 3!!!!!!!!\n")
+    sys.stdout.write("USE PYTHON 3!!!!!!!!\n")
     sys.exit()
 import os
 import sqlite3
