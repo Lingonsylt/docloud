@@ -16,9 +16,7 @@ const CLSID CLSID_doCloudExt =
 //{ 0xBFD98515, 0xCD74, 0x48A4, { 0x98, 0xE2, 0x13, 0xD2, 0x09, 0xE3, 0xEE, 0x4F } };
 //
 const char *installContextHandlers[] = {
-	".doc",
-	".docx",
-	".pdf",
+	"*",
 	"Folder",
 	"Directory",
 	NULL
