@@ -49,7 +49,7 @@ def _spawn(process, *args):
     subprocess.Popen([process] + list(args))
 
 def _get_pkg_path(default=None):
-    if ARGS["--pkg-path"] != "/pkg":
+    if ARGS["--pkg-path"] != "pkg/":
         pkg_path = ARGS["--pkg-path"]
     else:
         pkg_path = join(script_path, default if default is not None else "pkg")
