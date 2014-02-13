@@ -198,6 +198,11 @@ ShellExt::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 		if ((ret = dcfile->getFromPath(filename.c_str())) == -1) {
 			log("doCloudFile.getFromPath(%s): %d\n", filename.c_str(), ret);
 
+			delete dcfile;
+			continue;
+		}
+
+		if (dcfile->id == -1) {
 			/* We're not watching this, so check what filetype it is */
 			if (docloud_is_correct_filetype(filename.c_str()) ||
 			    PathIsDirectory(wide_filename) != FALSE) {
