@@ -193,7 +193,6 @@ doCloudFile::save()
 {
 	struct sqlite3_stmt *stmt;
 	int ret;
-	time_t updated;
 
 	if (sqlite_connect() == -1)
 		return -1;
@@ -206,7 +205,7 @@ doCloudFile::save()
 		    -1, &stmt, NULL);
 	} else {
 		ret = sqlite3_prepare_v2(sqlite_db,
-		    "UPDATE docloud_files SET filename = ?, blacklisted = ?, updated = ?, uploaded = ? WHERE id = ?",
+		    "UPDATE docloud_files SET filename = ?, blacklisted = ?, uploaded = ?, updated = ? WHERE id = ?",
 		    -1, &stmt, NULL);
 		log(
 		    "UPDATE docloud_files SET filename = '%s', blacklisted = %d, updated = %d, uploaded = %d WHERE id = %d",
@@ -215,8 +214,8 @@ doCloudFile::save()
 	}
 	ret += sqlite3_bind_text(stmt, 1, filename.c_str(), -1, NULL);
 	ret += sqlite3_bind_int(stmt, 2, blacklisted);
-	ret += sqlite3_bind_int(stmt, 3, updated);
 	ret += sqlite3_bind_int(stmt, 3, uploaded);
+	ret += sqlite3_bind_int(stmt, 4, updated);
 
 	if (ret != SQLITE_OK) {
 		log("Could not prepare statement: %s\n",
