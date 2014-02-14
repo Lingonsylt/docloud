@@ -31,7 +31,7 @@ extern "C" {
 #define WATCHER_TIMEOUT 1000
 #define WORKER_TIMEOUT INFINITE
 
-dirWatcher::dirWatcher(): hIOCP(NULL), max_key(0)
+dirWatcher::dirWatcher(): hIOCP(NULL), max_key(0), callback(NULL)
 {
 	/* used to send information to workers */
 	updatePort = CreateIoCompletionPort((HANDLE)INVALID_HANDLE_VALUE,
@@ -146,7 +146,7 @@ int dirWatcher::addDirectory(const char *path)
 		delete dir;
 		return -1;
 	}
-	wprintf(L"Added path %ls to watchlist successfully\n", dir->path.c_str());
+	wprintf(L"Added path %s to watchlist successfully\n", dir->path.c_str());
 
 	AcquireSRWLockExclusive(&dirLock);
 	this->dirs[dir->key] = dir;
@@ -250,15 +250,15 @@ dirWatcher::watch()
 			std::string narrow_filename = narrow(pIter->FileName);
 
 			/* Skip unknown filetypes */
-			if (!docloud_is_correct_filetype(narrow_filename.c_str()))
-				continue;
+			if (docloud_is_correct_filetype(narrow_filename.c_str())) {
+				/* Tell the workers we've found something */
+				std::string *str = new std::string(dir->path);
+				str->append("\\");
+				str->append(narrow_filename);
 
-			/* Tell the workers we've found something */
-			std::string *str = new std::string(dir->path);
-			str->append("\\");
-			str->append(narrow_filename);
 
-			PostQueuedCompletionStatus(updatePort, pIter->Action, (ULONG_PTR)str, NULL);
+				PostQueuedCompletionStatus(updatePort, pIter->Action, (ULONG_PTR)str, NULL);
+			}
 
 			if(pIter->NextEntryOffset == 0UL)
 				break;	
@@ -288,7 +288,7 @@ dirWatcher::watch()
 		}
 		ReleaseSRWLockShared(&dirLock);
 
-		wprintf(L"Added path %s to watchlist successfully\n", dir->path.c_str());
+		printf("Added path %s to watchlist successfully\n", dir->path.c_str());
 	}
 	return 0;
 }
@@ -320,8 +320,14 @@ dirWatcher::work()
 		if (path == NULL) continue;
 
 		printf("[worker] Updated path %s (%d)\n", path->c_str(), action);
+
+		if (callback) {
+			callback(path->c_str());
+		}
+
 		file = new doCloudFile;
 		file->getFromPath(path->c_str());
+
 
 		if (file->id != -1) {
 			printf("[worker] this file is one of ours!\n");

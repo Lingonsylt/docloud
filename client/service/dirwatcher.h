@@ -39,9 +39,12 @@ class dirWatcher {
 
 		int watch();
 		int work();
+		int setCallback(int (*callback)(const char *)) { this->callback = callback; }
 	private:
 		HANDLE hIOCP;
 		HANDLE updatePort;
+
+		int (*callback)(const char *);
 
 		SRWLOCK dirLock;
 		std::map<unsigned long long, directory *> dirs;
